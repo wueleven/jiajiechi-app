@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: cloudfunctions/garmin_sync
+title: Garmin/COROS 运动数据同步云函数
+scope:
+    - cloudfunctions/garminSync/
+source_files: []
+depends_on: []
+related_to:
+    - path: cloudfunctions/garmin_auth
+    - path: dailysync_ref
+    - path: miniprogram/pages_sync

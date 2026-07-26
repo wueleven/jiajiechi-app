@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: miniprogram
+title: 佳捷同微信小程序前端
+scope:
+    - miniprogram/
+source_files: []
+depends_on: []
+related_to: []

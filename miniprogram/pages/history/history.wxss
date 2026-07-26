@@ -1,0 +1,124 @@
+/* pages/history/history.wxss */
+.page-container {
+  padding: 20rpx 30rpx;
+  padding-bottom: 60rpx;
+}
+
+.record-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.record-card {
+  padding: 28rpx 30rpx;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.record-name {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 16rpx;
+}
+
+.record-body {
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f5f5f5;
+}
+
+.record-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10rpx 0;
+}
+
+.record-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.record-value {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.record-error {
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  background: #fff1f0;
+  border-radius: 8rpx;
+}
+
+.error-text {
+  font-size: 22rpx;
+  color: #ff4d4f;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+}
+
+.empty-icon-text {
+  font-size: 100rpx;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 30rpx;
+  color: #999;
+  margin-bottom: 12rpx;
+}
+
+.empty-sub {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* 加载更多 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx 0;
+}
+
+.loading-dot {
+  width: 24rpx;
+  height: 24rpx;
+  border: 4rpx solid #ccc;
+  border-top-color: #0052B9;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.no-more {
+  text-align: center;
+  padding: 30rpx 0;
+  font-size: 24rpx;
+  color: #ccc;
+}

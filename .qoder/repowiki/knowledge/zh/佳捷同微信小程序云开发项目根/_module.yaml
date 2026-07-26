@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: ""
+title: 佳捷同微信小程序云开发项目根
+scope:
+    - README.md
+    - project.config.json
+    - project.private.config.json
+    - uploadCloudFunction.sh
+source_files: []
+depends_on: []
+related_to: []

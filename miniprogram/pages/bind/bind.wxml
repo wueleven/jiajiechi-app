@@ -1,0 +1,143 @@
+<!--pages/bind/bind.wxml-->
+<view class="page-container">
+  <view class="page-header">
+    <text class="back-btn" bindtap="goBack">‹</text>
+    <text class="page-title">账号绑定管理</text>
+  </view>
+  <view class="page-desc">输入账号密码绑定平台，之后可直接同步数据</view>
+
+  <!-- Garmin 国服 -->
+  <view class="card bind-card">
+    <view class="bind-header">
+      <view class="platform-icon garmin-cn">G</view>
+      <view class="platform-info">
+        <view class="platform-name">Garmin 国服</view>
+        <view class="platform-desc">connect.garmin.cn</view>
+      </view>
+      <view wx:if="{{garminCn.bound}}" class="tag tag-success">已绑定</view>
+      <view wx:else class="tag tag-warning">未绑定</view>
+    </view>
+    <view wx:if="{{garminCn.bound}}" class="bind-actions">
+      <view class="bind-user">账号: {{garminCn.displayName}}</view>
+      <view class="btn-unbind" bindtap="onGarminCnTap">解除绑定</view>
+    </view>
+    <view wx:else class="bind-actions">
+      <view class="btn-bind" bindtap="onGarminCnTap">绑定账号</view>
+    </view>
+  </view>
+
+  <!-- Garmin 国际服 -->
+  <view class="card bind-card">
+    <view class="bind-header">
+      <view class="platform-icon garmin-com">G</view>
+      <view class="platform-info">
+        <view class="platform-name">Garmin 国际服</view>
+        <view class="platform-desc">connect.garmin.com</view>
+      </view>
+      <view wx:if="{{garminCom.bound}}" class="tag tag-success">已绑定</view>
+      <view wx:else class="tag tag-warning">未绑定</view>
+    </view>
+    <view wx:if="{{garminCom.bound}}" class="bind-actions">
+      <view class="bind-user">账号: {{garminCom.displayName}}</view>
+      <view class="btn-unbind" bindtap="onGarminComTap">解除绑定</view>
+    </view>
+    <view wx:else class="bind-actions">
+      <view class="btn-bind" bindtap="onGarminComTap">绑定账号</view>
+    </view>
+  </view>
+
+  <!-- COROS 高驰 -->
+  <view class="card bind-card">
+    <view class="bind-header">
+      <view class="platform-icon coros">C</view>
+      <view class="platform-info">
+        <view class="platform-name">COROS 高驰</view>
+        <view class="platform-desc">coros.com</view>
+      </view>
+      <view wx:if="{{coros.bound}}" class="tag tag-success">已绑定</view>
+      <view wx:else class="tag tag-warning">未绑定</view>
+    </view>
+    <view wx:if="{{coros.bound}}" class="bind-actions">
+      <view class="bind-user">账号: {{coros.displayName}}</view>
+      <view class="btn-unbind" bindtap="onCorosTap">解除绑定</view>
+    </view>
+    <view wx:else class="bind-actions">
+      <view class="btn-bind" bindtap="onCorosTap">绑定账号</view>
+    </view>
+  </view>
+
+  <!-- 说明 -->
+  <view class="card">
+    <view class="tip-title">使用说明</view>
+    <view class="tip-item">1. Garmin 账号使用账号密码绑定，支持 MFA 验证</view>
+    <view class="tip-item">2. COROS 使用注册邮箱和密码绑定</view>
+    <view class="tip-item">3. 绑定后无需再次登录，可直接同步数据</view>
+    <view class="tip-item">4. COROS 需保存密码用于自动刷新登录状态</view>
+    <view class="tip-item">5. 如需更换账号，先解绑再重新绑定即可</view>
+  </view>
+</view>
+
+<!-- 登录弹窗 -->
+<view class="modal-mask" wx:if="{{showBindModal}}">
+  <view class="modal-overlay" bindtap="closeBindModal"></view>
+  <view class="modal-content">
+    <view class="modal-title">绑定 {{currentPlatformName}}</view>
+    <view class="modal-desc">请输入你的平台账号和密码</view>
+    
+    <view class="input-group" catchtap="">
+      <view class="input-label">{{currentPlatform === 'coros' ? '邮箱' : '账号'}}</view>
+      <input 
+        class="modal-input" 
+        placeholder="{{currentPlatform === 'coros' ? '请输入 COROS 邮箱' : '请输入账号/邮箱'}}" 
+        value="{{username}}" 
+        bindinput="onUsernameInput"
+      />
+    </view>
+    
+    <view class="input-group" catchtap="">
+      <view class="input-label">密码</view>
+      <input 
+        class="modal-input" 
+        placeholder="请输入密码" 
+        password="{{true}}"
+        value="{{password}}" 
+        bindinput="onPasswordInput"
+      />
+    </view>
+
+    <view class="modal-actions">
+      <view class="modal-btn cancel" bindtap="closeBindModal">取消</view>
+      <view class="modal-btn confirm {{loginLoading ? 'loading' : ''}}" bindtap="submitLogin">
+        {{loginLoading ? '绑定中...' : '确认绑定'}}
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- MFA 验证码弹窗 -->
+<view class="modal-mask" wx:if="{{showMfaModal}}">
+  <view class="modal-overlay" bindtap="closeMfaModal"></view>
+  <view class="modal-content">
+    <view class="modal-title">输入验证码</view>
+    <view class="modal-desc">佳明账号已发送短信验证码，请输入收到的验证码</view>
+    
+    <view class="input-group" catchtap="">
+      <view class="input-label">短信验证码</view>
+      <input 
+        class="modal-input" 
+        placeholder="请输入短信验证码" 
+        type="number"
+        maxlength="6"
+        value="{{mfaCode}}" 
+        bindinput="onMfaCodeInput"
+      />
+    </view>
+
+    <view class="modal-actions">
+      <view class="modal-btn cancel" bindtap="closeMfaModal">取消</view>
+      <view class="modal-btn confirm {{mfaLoading ? 'loading' : ''}}" bindtap="submitMfaCode">
+        {{mfaLoading ? '验证中...' : '确认'}}
+      </view>
+    </view>
+  </view>
+</view>

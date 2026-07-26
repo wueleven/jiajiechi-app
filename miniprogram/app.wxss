@@ -1,0 +1,159 @@
+/**app.wxss**/
+button {
+  background: initial;
+  padding: 0;
+  margin: 0;
+}
+
+button:focus {
+  outline: 0;
+}
+
+button::after {
+  border: none;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 20rpx 30rpx;
+}
+
+page {
+  background: #f6f6f6;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #333;
+  font-size: 28rpx;
+}
+
+/* 通用卡片样式 */
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 主按钮 */
+.btn-primary {
+  background: #0052B9;
+  color: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  width: 100%;
+  border: none;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+.btn-primary.disabled {
+  background: #ccc;
+  color: #999;
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+  border-radius: 12rpx;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  width: 100%;
+  border: none;
+}
+
+/* 危险按钮 */
+.btn-danger {
+  background: #ff4d4f;
+  color: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  width: 100%;
+  border: none;
+}
+
+/* 状态标签 */
+.tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+}
+
+.tag-success {
+  background: #e6f7e6;
+  color: #52c41a;
+}
+
+.tag-warning {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.tag-error {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.tag-info {
+  background: #e6f0ff;
+  color: #0052B9;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.empty-state .empty-icon {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 30rpx;
+  opacity: 0.5;
+}
+
+.empty-state .empty-text {
+  font-size: 28rpx;
+}
+
+/* 分割线 */
+.divider {
+  height: 1rpx;
+  background: #eee;
+  margin: 20rpx 0;
+  width: 100%;
+}
+
+/* 加载状态 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}

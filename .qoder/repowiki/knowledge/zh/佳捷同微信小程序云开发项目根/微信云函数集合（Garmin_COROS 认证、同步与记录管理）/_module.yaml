@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: cloudfunctions
+title: 微信云函数集合（Garmin/COROS 认证、同步与记录管理）
+scope:
+    - cloudfunctions/
+source_files: []
+depends_on: []
+related_to: []

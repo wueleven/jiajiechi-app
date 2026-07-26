@@ -1,0 +1,143 @@
+<!--pages/sync/sync.wxml-->
+<view class="page-container">
+  <!-- 页面顶部：返回按钮 + 标题 -->
+  <view class="page-header">
+    <text class="back-btn" bindtap="goBack">‹</text>
+    <text class="page-title">同步活动</text>
+  </view>
+
+  <!-- 账号绑定状态 -->
+  <view class="bind-status-bar">
+    <view class="bind-tag {{bindStatus.garminCn ? 'bind-ok' : 'bind-no'}}">
+      <text class="bind-dot {{bindStatus.garminCn ? 'dot-ok' : 'dot-no'}}"></text>
+      <text>Garmin 国服</text>
+    </view>
+    <view class="bind-tag {{bindStatus.garminCom ? 'bind-ok' : 'bind-no'}}">
+      <text class="bind-dot {{bindStatus.garminCom ? 'dot-ok' : 'dot-no'}}"></text>
+      <text>Garmin 国际服</text>
+    </view>
+    <view class="bind-tag {{bindStatus.coros ? 'bind-ok' : 'bind-no'}}">
+      <text class="bind-dot {{bindStatus.coros ? 'dot-ok' : 'dot-no'}}"></text>
+      <text>COROS 高驰</text>
+    </view>
+  </view>
+
+  <!-- 同步方向选择 -->
+  <view class="card">
+    <view class="section-title">选择同步方向</view>
+    
+    <view wx:if="{{syncPairs.length === 0}}" class="empty-direction">
+      <view class="empty-text">暂无可用的同步方向</view>
+      <view class="empty-hint">请先绑定至少两个平台账号</view>
+      <view class="btn-go-bind" bindtap="goBind">去绑定账号</view>
+    </view>
+
+    <view wx:else class="pair-list">
+      <view 
+        wx:for="{{syncPairs}}" 
+        wx:key="id"
+        class="pair-card {{selectedPairId === item.id ? 'pair-selected' : ''}}"
+        bindtap="onPairSelect"
+        data-id="{{item.id}}"
+      >
+        <!-- 选中指示器 -->
+        <view class="pair-radio">
+          <view class="radio-dot {{selectedPairId === item.id ? 'radio-active' : ''}}"></view>
+        </view>
+
+        <!-- 平台配对：左侧 → 右侧 -->
+        <view class="pair-content">
+          <text class="platform-label">{{pairDirections[item.id] ? item.right.label : item.left.label}}</text>
+          
+          <!-- 方向切换按钮 -->
+          <view class="swap-btn" catchtap="onSwapDirection" data-id="{{item.id}}">
+            <text class="swap-arrow">⇄</text>
+          </view>
+
+          <text class="platform-label">{{pairDirections[item.id] ? item.left.label : item.right.label}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 同步按钮 -->
+  <view class="sync-section">
+    <!-- 同步数量选择 -->
+    <view class="sync-count-row">
+      <text class="sync-count-label">同步数量</text>
+      <picker class="sync-count-picker" mode="selector" range="{{syncCountOptions}}" range-key="label" value="{{syncCountIndex}}" bindchange="onSyncCountChange">
+        <view class="sync-count-value">{{syncCountLabel}} ▾</view>
+      </picker>
+    </view>
+    <!-- 强制重新同步 -->
+    <view class="force-resync-row" bindtap="onToggleForceResync">
+      <view class="force-resync-check {{forceResync ? 'checked' : ''}}">
+        <text wx:if="{{forceResync}}">✓</text>
+      </view>
+      <text class="force-resync-label">强制重新同步（忽略上次同步时间，重新拉取所有活动）</text>
+    </view>
+    <button 
+      class="btn-sync {{syncing ? 'disabled' : ''}}" 
+      bindtap="startSync" 
+      disabled="{{syncing || syncPairs.length === 0}}"
+    >
+      {{syncing ? '同步中...' : '开始同步'}}
+    </button>
+    <view class="sync-tip">将从源平台拉取近期活动数据并同步到目标平台</view>
+  </view>
+
+  <!-- 同步结果 -->
+  <view class="card result-card" wx:if="{{showResult}}">
+    <view class="section-title">同步结果</view>
+    <view class="result-summary">
+      <view class="result-item">
+        <text class="result-num">{{syncProgress.total}}</text>
+        <text class="result-label">总计</text>
+      </view>
+      <view class="result-item success">
+        <text class="result-num">{{syncProgress.success}}</text>
+        <text class="result-label">成功</text>
+      </view>
+      <view class="result-item">
+        <text class="result-num">{{syncProgress.skipped}}</text>
+        <text class="result-label">跳过</text>
+      </view>
+      <view class="result-item failed">
+        <text class="result-num">{{syncProgress.failed}}</text>
+        <text class="result-label">失败</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 同步中遮罩 -->
+  <view class="syncing-overlay" wx:if="{{syncing}}">
+    <view class="syncing-content">
+      <view class="syncing-icon"></view>
+      <view class="syncing-text">正在同步数据...</view>
+      <view class="syncing-sub">请勿关闭小程序</view>
+    </view>
+  </view>
+
+  <!-- MFA 验证码弹窗 -->
+  <view class="mfa-overlay" wx:if="{{showMfaModal}}">
+    <view class="mfa-modal">
+      <view class="mfa-title">需要安全验证码</view>
+      <view class="mfa-desc">
+        {{mfaPlatform === 'garminCn' ? '佳明国服' : '佳明国际服'}}账号需要验证身份，请输入邮箱收到的验证码
+      </view>
+      <input 
+        class="mfa-input" 
+        type="number" 
+        maxlength="6" 
+        placeholder="请输入验证码" 
+        value="{{mfaCode}}" 
+        bindinput="onMfaCodeInput"
+        focus="{{showMfaModal}}"
+      />
+      <view class="mfa-buttons">
+        <button class="mfa-btn mfa-cancel" bindtap="onMfaClose">取消</button>
+        <button class="mfa-btn mfa-confirm" bindtap="onMfaSubmit">确认</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,11 @@
+{
+  "name": "corosSync",
+  "version": "1.0.0",
+  "description": "COROS 数据推送云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "node-fetch": "^2.6.7",
+    "form-data": "^4.0.0"
+  }
+}

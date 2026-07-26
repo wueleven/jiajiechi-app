@@ -1,0 +1,126 @@
+<!--pages/index/index.wxml-->
+<view class="page-container">
+  <!-- 顶部欢迎区域 -->
+  <view class="header-section">
+    <view class="header-brand">
+      <image class="header-logo" src="/images/logo.jpg" mode="aspectFit"></image>
+      <view class="header-text">
+        <view class="header-title">佳捷同</view>
+        <view class="header-desc">轻松同步你的佳明运动数据</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 账号绑定状态 -->
+  <view class="card">
+    <view class="section-title">账号绑定状态</view>
+    
+    <!-- Garmin 国服 -->
+    <view class="account-item" bindtap="goBind">
+      <view class="account-left">
+        <view class="account-icon garmin-icon">G</view>
+        <view class="account-info">
+          <view class="account-name">Garmin 国服</view>
+          <view class="account-status" wx:if="{{bindStatus.garminCn.bound}}">
+            <text class="tag tag-success">已绑定</text>
+            <text class="account-display">{{bindStatus.garminCn.displayName}}</text>
+          </view>
+          <view class="account-status" wx:else>
+            <text class="tag tag-warning">未绑定</text>
+          </view>
+        </view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+
+    <!-- Garmin 国际服 -->
+    <view class="account-item" bindtap="goBind">
+      <view class="account-left">
+        <view class="account-icon garmin-global-icon">G</view>
+        <view class="account-info">
+          <view class="account-name">Garmin 国际服</view>
+          <view class="account-status" wx:if="{{bindStatus.garminCom.bound}}">
+            <text class="tag tag-success">已绑定</text>
+            <text class="account-display">{{bindStatus.garminCom.displayName}}</text>
+          </view>
+          <view class="account-status" wx:else>
+            <text class="tag tag-warning">未绑定</text>
+          </view>
+        </view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+
+    <!-- COROS 高驰 -->
+    <view class="account-item" bindtap="goBind">
+      <view class="account-left">
+        <view class="account-icon coros-icon">C</view>
+        <view class="account-info">
+          <view class="account-name">COROS 高驰</view>
+          <view class="account-status" wx:if="{{bindStatus.coros.bound}}">
+            <text class="tag tag-success">已绑定</text>
+            <text class="account-display">{{bindStatus.coros.displayName}}</text>
+          </view>
+          <view class="account-status" wx:else>
+            <text class="tag tag-warning">未绑定</text>
+          </view>
+        </view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="card">
+    <view class="section-title">快捷操作</view>
+    
+    <view class="action-item" bindtap="goSync">
+      <view class="action-icon">↗</view>
+      <view class="action-text">
+        <view class="action-name">开始同步</view>
+        <view class="action-desc">手动触发数据同步</view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+
+    <view class="action-item" bindtap="goHistory">
+      <view class="action-icon">📋</view>
+      <view class="action-text">
+        <view class="action-name">同步记录</view>
+        <view class="action-desc" wx:if="{{lastSyncTime}}">上次同步: {{lastSyncTime}}</view>
+        <view class="action-desc" wx:else>暂无同步记录</view>
+      </view>
+      <view class="arrow">></view>
+    </view>
+  </view>
+
+  <!-- 同步方向说明 -->
+  <view class="card">
+    <view class="section-title">支持的同步方向</view>
+    <view class="sync-triangle">
+      <!-- 三角形连线图 -->
+      <view class="triangle-container">
+        <!-- 顶部节点: Garmin 国服 -->
+        <view class="triangle-node garmin-cn-node" style="top: 0; left: 50%;">
+          <text>Garmin 国服</text>
+        </view>
+        <!-- 左下节点: Garmin 国际服 -->
+        <view class="triangle-node garmin-global-node" style="bottom: 0; left: 0;">
+          <text>Garmin 国际服</text>
+        </view>
+        <!-- 右下节点: COROS 高驰 -->
+        <view class="triangle-node coros-node" style="bottom: 0; right: 0;">
+          <text>COROS 高驰</text>
+        </view>
+        <!-- 连线 -->
+        <view class="triangle-line left-line"></view>
+        <view class="triangle-line right-line"></view>
+        <view class="triangle-line bottom-line"></view>
+        <!-- 双向箭头标签 -->
+        <view class="triangle-arrow-label left-label">⇄</view>
+        <view class="triangle-arrow-label right-label">⇄</view>
+        <view class="triangle-arrow-label bottom-label">⇄</view>
+      </view>
+    </view>
+  </view>
+</view>

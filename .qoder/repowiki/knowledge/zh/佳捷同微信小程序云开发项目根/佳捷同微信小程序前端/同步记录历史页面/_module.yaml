@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: miniprogram/pages_history
+title: 同步记录历史页面
+scope:
+    - miniprogram/pages/history/
+source_files: []
+depends_on: []
+related_to: []

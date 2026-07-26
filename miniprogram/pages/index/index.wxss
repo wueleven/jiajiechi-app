@@ -1,0 +1,264 @@
+/* pages/index/index.wxss */
+page {
+  padding-top: 54rpx;
+  background-color: #f6f6f6;
+  padding-bottom: 60rpx;
+}
+
+.page-container {
+  padding: 20rpx 30rpx;
+  padding-bottom: 40rpx;
+}
+
+.header-section {
+  background: linear-gradient(135deg, #0052B9, #0073e6);
+  border-radius: 16rpx;
+  padding: 40rpx 40rpx;
+  margin-bottom: 30rpx;
+  color: #fff;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.header-logo {
+  width: 100rpx;
+  height: 100rpx;
+  flex-shrink: 0;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.header-title {
+  font-size: 42rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.header-desc {
+  font-size: 24rpx;
+  opacity: 0.85;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+/* 账号列表 */
+.account-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.account-item:last-child {
+  border-bottom: none;
+}
+
+.account-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.account-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-right: 24rpx;
+}
+
+.garmin-icon {
+  background: #00a3d9;
+}
+
+.garmin-global-icon {
+  background: #0052B9;
+}
+
+.coros-icon {
+  background: #ff6b00;
+}
+
+.account-info {
+  flex: 1;
+}
+
+.account-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.account-status {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.account-display {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.arrow {
+  color: #ccc;
+  font-size: 32rpx;
+}
+
+/* 快捷操作 */
+.action-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.action-item:last-child {
+  border-bottom: none;
+}
+
+.action-icon {
+  width: 72rpx;
+  height: 72rpx;
+  background: #f0f5ff;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: 24rpx;
+}
+
+.action-text {
+  flex: 1;
+}
+
+.action-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+
+.action-desc {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 同步方向 - 三角形图 */
+.sync-triangle {
+  display: flex;
+  justify-content: center;
+  padding: 16rpx 0;
+}
+
+.triangle-container {
+  position: relative;
+  width: 480rpx;
+  height: 340rpx;
+}
+
+.triangle-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 180rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #fff;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.garmin-cn-node {
+  background: #00a3d9;
+  top: 0;
+  left: 50%;
+}
+
+.garmin-global-node {
+  background: #0052B9;
+  bottom: 0;
+  left: 25%;
+}
+
+.coros-node {
+  background: #ff6b00;
+  bottom: 0;
+  right: auto;
+  left: 75%;
+}
+
+.triangle-line {
+  position: absolute;
+  background: #bbb;
+}
+
+.left-line {
+  width: 4rpx;
+  height: 220rpx;
+  top: 64rpx;
+  left: 25%;
+  transform: rotate(30deg);
+  transform-origin: top center;
+}
+
+.right-line {
+  width: 4rpx;
+  height: 220rpx;
+  top: 64rpx;
+  right: 25%;
+  transform: rotate(-30deg);
+  transform-origin: top center;
+}
+
+.bottom-line {
+  height: 4rpx;
+  bottom: 30rpx;
+  left: 25%;
+  right: 25%;
+  width: 50%;
+}
+
+.triangle-arrow-label {
+  position: absolute;
+  font-size: 28rpx;
+  color: #0052B9;
+  font-weight: bold;
+}
+
+.left-label {
+  top: 45%;
+  left: 8%;
+}
+
+.right-label {
+  top: 45%;
+  right: 8%;
+}
+
+.bottom-label {
+  bottom: 50rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}

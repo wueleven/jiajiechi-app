@@ -1,0 +1,12 @@
+{
+  "name": "garminAuth",
+  "version": "1.0.0",
+  "description": "Garmin & COROS 认证管理云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.0",
+    "qs": "^6.11.0",
+    "oauth-1.0a": "^2.2.6"
+  }
+}

@@ -1,0 +1,52 @@
+<!--pages/history/history.wxml-->
+<view class="page-container">
+  <!-- 记录列表 -->
+  <view wx:if="{{records.length > 0}}" class="record-list">
+    <view wx:for="{{records}}" wx:key="_id" class="card record-card">
+      <view class="record-header">
+        <view class="record-name">{{item.activityName || '未知活动'}}</view>
+        <view class="tag {{item.status === 'success' ? 'tag-success' : item.status === 'failed' ? 'tag-error' : item.status === 'skipped' ? 'tag-warning' : 'tag-info'}}">
+          {{item.status === 'success' ? '成功' : item.status === 'failed' ? '失败' : item.status === 'skipped' ? '跳过' : item.status === 'syncing' ? '同步中' : '等待中'}}
+        </view>
+      </view>
+      
+      <view class="record-body">
+        <view class="record-row">
+          <text class="record-label">同步方向</text>
+          <text class="record-value">
+            {{item.direction === 'garminCnToGarminCom' ? '国服 → 国际服' : item.direction === 'garminComToGarminCn' ? '国际服 → 国服' : item.direction === 'garminCnToCoros' ? '国服 → 高驰' : item.direction === 'garminComToCoros' ? '国际服 → 高驰' : item.direction === 'corosToGarminCn' ? '高驰 → 国服' : item.direction === 'corosToGarminCom' ? '高驰 → 国际服' : item.direction}}
+          </text>
+        </view>
+        <view class="record-row">
+          <text class="record-label">活动时间</text>
+          <text class="record-value">{{item.activityTime || '-'}}</text>
+        </view>
+        <view class="record-row">
+          <text class="record-label">同步时间</text>
+          <text class="record-value">{{item.createdAtFormatted || '-'}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.status === 'failed' && item.errorMsg}}" class="record-error">
+        <text class="error-text">失败原因: {{item.errorMsg}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{!loading && records.length === 0}}" class="empty-state">
+    <view class="empty-icon-text">📋</view>
+    <view class="empty-text">暂无同步记录</view>
+    <view class="empty-sub">去同步页开始你的第一次数据同步吧</view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{loading}}" class="loading-more">
+    <view class="loading-dot"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <view wx:if="{{!hasMore && records.length > 0}}" class="no-more">
+    <text>没有更多记录了</text>
+  </view>
+</view>

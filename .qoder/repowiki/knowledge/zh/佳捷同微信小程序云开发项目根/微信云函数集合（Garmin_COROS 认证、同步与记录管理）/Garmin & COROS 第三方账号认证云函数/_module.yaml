@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: cloudfunctions/garmin_auth
+title: Garmin & COROS 第三方账号认证云函数
+scope:
+    - cloudfunctions/garminAuth/
+source_files: []
+depends_on: []
+related_to:
+    - path: cloudfunctions/garmin_sync
+    - path: miniprogram/pages_bind
+    - path: miniprogram/pages_index

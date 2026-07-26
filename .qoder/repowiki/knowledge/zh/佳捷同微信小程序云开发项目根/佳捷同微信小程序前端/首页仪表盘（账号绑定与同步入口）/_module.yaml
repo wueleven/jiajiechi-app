@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: miniprogram/pages_index
+title: 首页仪表盘（账号绑定与同步入口）
+scope:
+    - miniprogram/pages/index/
+source_files: []
+depends_on: []
+related_to:
+    - path: cloudfunctions/garmin_auth

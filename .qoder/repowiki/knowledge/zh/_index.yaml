@@ -1,0 +1,119 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: Q0DeR-MaG1C-BrAnCh-Fo2-NoN-GiT-Or-No-C0MmIt
+nodes_managed: true
+exported_at: "2026-07-25T15:09:56Z"
+modules:
+    "":
+        dir_name: 佳捷同微信小程序云开发项目根
+        title: 佳捷同微信小程序云开发项目根
+        scope:
+            - README.md
+            - project.config.json
+            - project.private.config.json
+            - uploadCloudFunction.sh
+        source_files: []
+        children:
+            - cloudfunctions
+            - dailysync_ref
+            - miniprogram
+        depends_on: []
+        related_to: []
+    cloudfunctions:
+        dir_name: 微信云函数集合（Garmin_COROS 认证、同步与记录管理）
+        title: 微信云函数集合（Garmin/COROS 认证、同步与记录管理）
+        scope:
+            - cloudfunctions/
+        source_files: []
+        children:
+            - cloudfunctions/garmin_auth
+            - cloudfunctions/garmin_sync
+        depends_on: []
+        related_to: []
+    cloudfunctions/garmin_auth:
+        dir_name: Garmin & COROS 第三方账号认证云函数
+        title: Garmin & COROS 第三方账号认证云函数
+        scope:
+            - cloudfunctions/garminAuth/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cloudfunctions/garmin_sync
+            - path: miniprogram/pages_bind
+            - path: miniprogram/pages_index
+    cloudfunctions/garmin_sync:
+        dir_name: Garmin_COROS 运动数据同步云函数
+        title: Garmin/COROS 运动数据同步云函数
+        scope:
+            - cloudfunctions/garminSync/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cloudfunctions/garmin_auth
+            - path: dailysync_ref
+            - path: miniprogram/pages_sync
+    dailysync_ref:
+        dir_name: 佳明运动数据跨区同步与采集工具
+        title: 佳明运动数据跨区同步与采集工具
+        scope:
+            - dailysync-ref/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cloudfunctions/garmin_sync
+    miniprogram:
+        dir_name: 佳捷同微信小程序前端
+        title: 佳捷同微信小程序前端
+        scope:
+            - miniprogram/
+        source_files: []
+        children:
+            - miniprogram/pages_bind
+            - miniprogram/pages_history
+            - miniprogram/pages_index
+            - miniprogram/pages_sync
+        depends_on: []
+        related_to: []
+    miniprogram/pages_bind:
+        dir_name: 第三方账号绑定管理页面
+        title: 第三方账号绑定管理页面
+        scope:
+            - miniprogram/pages/bind/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cloudfunctions/garmin_auth
+    miniprogram/pages_history:
+        dir_name: 同步记录历史页面
+        title: 同步记录历史页面
+        scope:
+            - miniprogram/pages/history/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    miniprogram/pages_index:
+        dir_name: 首页仪表盘（账号绑定与同步入口）
+        title: 首页仪表盘（账号绑定与同步入口）
+        scope:
+            - miniprogram/pages/index/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cloudfunctions/garmin_auth
+    miniprogram/pages_sync:
+        dir_name: 跨平台运动数据同步页面
+        title: 跨平台运动数据同步页面
+        scope:
+            - miniprogram/pages/sync/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cloudfunctions/garmin_sync

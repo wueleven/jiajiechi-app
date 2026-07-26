@@ -1,0 +1,16 @@
+{
+  "name": "garminSync",
+  "version": "1.0.0",
+  "description": "Garmin 数据拉取与同步云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "decompress": "^4.2.1",
+    "oauth-1.0a": "^2.2.6",
+    "qs": "^6.11.0",
+    "@aws-sdk/client-s3": "^3.400.0",
+    "jszip": "^3.10.0"
+  }
+}

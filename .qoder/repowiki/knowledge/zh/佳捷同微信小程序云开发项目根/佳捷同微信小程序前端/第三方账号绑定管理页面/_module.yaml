@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: miniprogram/pages_bind
+title: 第三方账号绑定管理页面
+scope:
+    - miniprogram/pages/bind/
+source_files: []
+depends_on: []
+related_to:
+    - path: cloudfunctions/garmin_auth

@@ -1,0 +1,9 @@
+# Third-party reference project (not part of this app)
+dailysync-ref/
+
+# Dependencies
+node_modules/
+miniprogram/node_modules/
+
+# OS files
+.DS_Store
