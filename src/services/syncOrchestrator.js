@@ -224,11 +224,26 @@ export async function syncActivities(direction, forceResync = false, syncCount =
           try {
             await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
           } catch (ulErr) {
+            // 409 = 佳明已存在该活动（重复），视为同步完成，跳过而不计为失败
+            if (ulErr?.status === 409) {
+              updateSyncRecord(record._id, { status: 'skipped', errorMsg: '佳明已存在该活动' })
+              result.skipped++
+              continue
+            }
             if (shouldRefreshToken(ulErr)) {
               const newOauth2 = await refreshTokenForPlatform(targetPlatform)
               if (newOauth2.mfaRequired) return { success: false, mfaRequired: true, ...newOauth2 }
               targetOauth2 = newOauth2
-              await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
+              try {
+                await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
+              } catch (retryErr) {
+                if (retryErr?.status === 409) {
+                  updateSyncRecord(record._id, { status: 'skipped', errorMsg: '佳明已存在该活动' })
+                  result.skipped++
+                  continue
+                }
+                throw retryErr
+              }
             } else throw ulErr
           }
         }

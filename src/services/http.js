@@ -147,16 +147,27 @@ export async function httpRequest(url, options = {}) {
 // ============ 原生 HTTP (CapacitorHttp) ============
 
 async function nativeRequest(url, method, headers, body, responseType, timeout, validateStatus, followRedirect = true) {
-  // 二进制下载优先使用 WebView fetch（避免 CapacitorHttp 桥接层损坏二进制数据）
-  if (responseType === 'arraybuffer') {
+  const upperMethod = method.toUpperCase()
+  // 二进制下载 或 带文件/表单的上传 优先使用 WebView fetch：
+  // 避免 CapacitorHttp 桥接层把 FormData 里的二进制文件转成 JSON，导致 415 Unsupported Media Type
+  const useFetch = responseType === 'arraybuffer' || body instanceof FormData
+  if (useFetch) {
     try {
+      // FormData 上传时让 WebView 自动设置 multipart/form-data 的 boundary，
+      // 因此移除调用方可能误设的 Content-Type
+      const fetchHeaders = { ...headers }
+      if (body instanceof FormData) {
+        delete fetchHeaders['Content-Type']
+        delete fetchHeaders['content-type']
+      }
+
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
 
       const fetchRes = await fetch(url, {
-        method: method.toUpperCase(),
-        headers,
-        body: body && method.toUpperCase() !== 'GET' ? body : undefined,
+        method: upperMethod,
+        headers: fetchHeaders,
+        body: body && upperMethod !== 'GET' ? body : undefined,
         redirect: followRedirect !== false ? 'follow' : 'manual',
         signal: controller.signal,
       })
@@ -168,8 +179,6 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
         throw err
       }
 
-      const data = await fetchRes.arrayBuffer()
-
       // 收集 Set-Cookie
       const setCookie = fetchRes.headers.get('set-cookie') || fetchRes.headers.get('Set-Cookie') || ''
       if (setCookie) parseAndStoreCookies([setCookie], url)
@@ -177,16 +186,27 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
       const respHeaders = {}
       fetchRes.headers.forEach((v, k) => { respHeaders[k.toLowerCase()] = v })
 
-      console.log(`[http] fetch binary OK: ${data.byteLength} bytes from ${url}`)
+      // 根据 responseType 解析响应体
+      let data
+      if (responseType === 'arraybuffer') {
+        data = await fetchRes.arrayBuffer()
+        console.log(`[http] fetch binary OK: ${data.byteLength} bytes from ${url}`)
+      } else if (responseType === 'text') {
+        data = await fetchRes.text()
+      } else {
+        // json（默认）：先读 text 再解析，避免 json() 失败后无法回退
+        const text = await fetchRes.text()
+        try { data = JSON.parse(text) } catch { data = text }
+      }
+
       return { status: fetchRes.status, headers: respHeaders, data, url: fetchRes.url || url }
     } catch (fetchErr) {
-      // 验证性错误直接抛出，不回退
+      // 验证性错误（如 4xx/5xx）直接抛出，不回退
       if (fetchErr.status) throw fetchErr
       // 其他错误（CORS/网络等）回退到 CapacitorHttp
-      console.warn(`[http] fetch binary failed (${fetchErr.message}), falling back to CapacitorHttp`)
+      console.warn(`[http] fetch failed (${fetchErr.message}), falling back to CapacitorHttp`)
     }
   }
-  const upperMethod = method.toUpperCase()
   const requestData = {
     url,
     method: upperMethod,
