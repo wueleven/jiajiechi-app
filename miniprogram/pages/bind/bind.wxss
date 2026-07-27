@@ -61,7 +61,7 @@
 }
 
 .coros {
-  background: linear-gradient(135deg, #ff6b00, #e05e00);
+  background: linear-gradient(135deg, #F40000, #C80000);
 }
 
 .platform-info {
