@@ -20,15 +20,21 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页"
+        "text": "首页",
+        "iconPath": "images/icons/tab-home.png",
+        "selectedIconPath": "images/icons/tab-home.png"
       },
       {
         "pagePath": "pages/sync/sync",
-        "text": "同步"
+        "text": "同步",
+        "iconPath": "images/icons/tab-sync.png",
+        "selectedIconPath": "images/icons/tab-sync.png"
       },
       {
         "pagePath": "pages/history/history",
-        "text": "记录"
+        "text": "记录",
+        "iconPath": "images/icons/tab-list.png",
+        "selectedIconPath": "images/icons/tab-list.png"
       }
     ]
   },
