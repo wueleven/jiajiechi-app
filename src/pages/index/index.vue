@@ -36,7 +36,7 @@
       <div class="section-title">快捷操作</div>
 
       <div class="action-item" @click="goSync">
-        <div class="action-icon">↗</div>
+        <div class="action-icon"><img src="../../assets/icons/tab-sync.png" alt="" /></div>
         <div class="action-text">
           <div class="action-name">开始同步</div>
           <div class="action-desc">手动触发数据同步</div>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="action-item" @click="goHistory">
-        <div class="action-icon">📋</div>
+        <div class="action-icon"><img src="../../assets/icons/tab-list.png" alt="" /></div>
         <div class="action-text">
           <div class="action-name">同步记录</div>
           <div class="action-desc" v-if="lastSyncTime">上次同步: {{ lastSyncTime }}</div>
@@ -184,6 +184,11 @@ function goHistory() { router.push('/history') }
   width: 40px; height: 40px; background: #f0f5ff; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 20px; margin-right: 14px;
+}
+.action-icon img {
+  width: 22px; height: 22px; object-fit: contain;
+  /* 白底变透明，仅保留深蓝线条，融入浅蓝圆角盒 */
+  mix-blend-mode: multiply;
 }
 .action-text { flex: 1; }
 .action-name { font-size: 14px; color: #333; font-weight: 500; margin-bottom: 3px; }
