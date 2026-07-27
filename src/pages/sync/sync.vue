@@ -266,8 +266,8 @@ onActivated(loadBindInfo)
 .back-btn { font-size: 28px; color: #0052B9; cursor: pointer; line-height: 1; }
 .page-title { font-size: 20px; font-weight: 600; color: #333; }
 
-.bind-status-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-.bind-tag { display: flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 11px; }
+.bind-status-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+.bind-tag { flex: 1; min-width: 0; justify-content: center; display: flex; align-items: center; gap: 5px; padding: 5px 4px; border-radius: 20px; font-size: 11px; box-sizing: border-box; white-space: nowrap; }
 .bind-ok { background: #f0fff4; color: #389e0d; }
 .bind-no { background: #f5f5f5; color: #999; }
 .bind-dot { width: 7px; height: 7px; border-radius: 50%; }
