@@ -3,9 +3,9 @@
     <!-- 顶部品牌区域 -->
     <div class="header-section">
       <div class="header-brand">
-        <img class="header-logo" :src="logoImg" alt="佳捷同" />
+        <img class="header-logo" :src="logoImg" alt="佳捷驰" />
         <div class="header-text">
-          <div class="header-title">佳捷同</div>
+          <div class="header-title">佳捷驰</div>
           <div class="header-desc">轻松同步你的佳明运动数据</div>
         </div>
       </div>
