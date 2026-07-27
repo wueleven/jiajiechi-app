@@ -170,7 +170,7 @@ function goHistory() { router.push('/history') }
 }
 .garmin-icon { background: #00a3d9; }
 .garmin-global-icon { background: #0052B9; }
-.coros-icon { background: #ff6b00; }
+.coros-icon { background: #F40000; }
 .account-name { font-size: 14px; color: #333; margin-bottom: 4px; }
 .account-status { display: flex; align-items: center; gap: 8px; }
 .account-display { font-size: 12px; color: #999; }
@@ -204,5 +204,5 @@ function goHistory() { router.push('/history') }
 }
 .triangle-node.garmin-cn { background: #00a3d9; }
 .triangle-node.garmin-global { background: #0052B9; }
-.triangle-node.coros { background: #ff6b00; }
+.triangle-node.coros { background: #F40000; }
 </style>

@@ -225,7 +225,7 @@ function goBack() { router.push('/index') }
 }
 .garmin-cn { background: linear-gradient(135deg, #00a3d9, #0088b8); }
 .garmin-com { background: linear-gradient(135deg, #0052B9, #003d8a); }
-.coros { background: linear-gradient(135deg, #ff6b00, #e05e00); }
+.coros { background: linear-gradient(135deg, #F40000, #C80000); }
 .platform-name { font-size: 15px; font-weight: 500; color: #333; margin-bottom: 3px; }
 .platform-desc { font-size: 12px; color: #999; }
 .platform-info { flex: 1; }
