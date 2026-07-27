@@ -624,21 +624,44 @@ async function syncActivities(openid, event) {
             let corosResult;
             try {
               corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
+              // 检查 COROS 导入结果（必须显式判断 success，不能只看 duplicate）
+              if (corosResult.duplicate) {
+                // COROS 已有该活动，跳过但不算失败
+                await db.collection("syncRecords").doc(recordRes._id).update({
+                  data: { status: "skipped", errorMsg: "COROS 已存在该活动", updatedAt: new Date() },
+                });
+                result.skipped++;
+                console.log(`Skipped (duplicate in COROS): ${activityName}`);
+                continue;
+              }
+              if (!corosResult.success) {
+                // COROS 返回非成功（如 1019 token 失效），必须视为失败并抛出，触发刷新重试
+                throw new Error(`COROS 导入失败: ${JSON.stringify(corosResult)}`);
+              }
             } catch (ulErr) {
-              // 如果上传失败，尝试刷新 COROS session 重试
-              console.log(`COROS upload failed, refreshing session and retrying... error: ${ulErr.message}`);
-              corosSession = await getCorosSession(openid);
-              corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
-            }
-            // 检查 COROS 导入结果
-            if (corosResult && corosResult.duplicate) {
-              // COROS 已有该活动，跳过但不算失败
-              await db.collection("syncRecords").doc(recordRes._id).update({
-                data: { status: "skipped", errorMsg: "COROS 已存在该活动", updatedAt: new Date() },
-              });
-              result.skipped++;
-              console.log(`Skipped (duplicate in COROS): ${activityName}`);
-              continue;
+              // token 失效（如 1019 Access token is invalid）则刷新 session 重试一次
+              const isTokenErr = ulErr.message && (ulErr.message.includes("Access token is invalid") || ulErr.message.includes("token"));
+              if (isTokenErr) {
+                try {
+                  console.log(`COROS token invalid, refreshing session and retrying... error: ${ulErr.message}`);
+                  corosSession = await getCorosSession(openid, true);
+                  const retry = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
+                  if (retry.duplicate) {
+                    await db.collection("syncRecords").doc(recordRes._id).update({
+                      data: { status: "skipped", errorMsg: "COROS 已存在该活动", updatedAt: new Date() },
+                    });
+                    result.skipped++;
+                    continue;
+                  }
+                  if (!retry.success) {
+                    throw new Error(`COROS 导入重试失败: ${JSON.stringify(retry)}`);
+                  }
+                } catch (retryErr) {
+                  throw retryErr; // 冒泡到外层 catch，标记该活动为失败
+                }
+              } else {
+                throw ulErr;
+              }
             }
           } else {
             // 上传到 Garmin
