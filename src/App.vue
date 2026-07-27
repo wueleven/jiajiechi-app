@@ -11,7 +11,7 @@
         :class="{ active: currentTab === tab.path }"
         @click="switchTab(tab.path)"
       >
-        <span class="tab-icon">{{ tab.icon }}</span>
+        <span class="tab-icon"><img :src="tab.icon" alt="" /></span>
         <span class="tab-label">{{ tab.label }}</span>
       </div>
     </nav>
@@ -21,14 +21,17 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import tabHome from './assets/icons/tab-home.png'
+import tabList from './assets/icons/tab-list.png'
+import tabSync from './assets/icons/tab-sync.png'
 
 const router = useRouter()
 const route = useRoute()
 
 const tabs = [
-  { path: '/index', label: '首页', icon: '🏠' },
-  { path: '/sync', label: '同步', icon: '↗️' },
-  { path: '/history', label: '记录', icon: '📋' },
+  { path: '/index', label: '首页', icon: tabHome },
+  { path: '/sync', label: '同步', icon: tabSync },
+  { path: '/history', label: '记录', icon: tabList },
 ]
 
 const currentTab = computed(() => route.path)
@@ -86,6 +89,22 @@ function switchTab(path) {
 .tab-icon {
   font-size: 20px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  /* 未选中：深蓝线条转为浅灰，弱化显示 */
+  filter: grayscale(1) brightness(1.6) opacity(0.55);
+  transition: filter 0.2s, transform 0.2s;
+}
+.tab-item.active .tab-icon img {
+  /* 选中：还原深蓝原色并轻微放大 */
+  filter: none;
+  transform: scale(1.08);
 }
 
 .tab-label {
