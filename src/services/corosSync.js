@@ -118,17 +118,30 @@ export async function uploadToCoros(fitData, filename, corosSession) {
 
   const resData = importRes.data || {}
   const importData = resData.data || {}
-  const isSuccess = resData.result === '0000' || resData.apiCode === '8E16FCC7'
-  const isDuplicate = resData.message && resData.message.includes('exist')
+  const result = resData.result
+  // 参考 garmin-sync-coros：成功必须 result==='0000'（data.status==2 仅服务端内部标记，此处以 result 为准）
+  const isSuccess = result === '0000' || resData.apiCode === '8E16FCC7'
+  const isDuplicate = resData.message && (resData.message.includes('exist') || result === '1003')
 
-  if (isDuplicate) {
-    return { success: false, duplicate: true }
-  } else if (isSuccess) {
-    return { success: true, duplicate: false }
-  } else if (importRes.status !== 200) {
+  // HTTP 层失败（如网络/网关错误）直接抛出
+  if (importRes.status !== 200) {
     throw new Error(`COROS 导入通知失败: HTTP ${importRes.status}`)
   }
-  return { success: false, duplicate: false }
+
+  // 重复活动：视为跳过而非失败
+  if (isDuplicate) {
+    return { success: false, duplicate: true }
+  }
+
+  // COROS 在 HTTP 200 的 body 里返回业务错误码（如 1019 Access token is invalid）。
+  // 必须显式判失败并抛出，让编排层识别 token 失效并触发刷新重试，绝不能静默返回 success:false。
+  if (!isSuccess) {
+    const msg = resData.message || `result=${result}`
+    // message 中保留 'token' / 'invalid' 关键字，供 isCorosTokenError() 识别以触发刷新
+    throw new Error(`COROS 导入失败: ${msg}`)
+  }
+
+  return { success: true, duplicate: false }
 }
 
 // ============ S3/OSS 上传（纯 JS 实现） ============

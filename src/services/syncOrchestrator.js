@@ -204,21 +204,36 @@ export async function syncActivities(direction, forceResync = false, syncCount =
         // 上传到目标平台
         console.log(`Uploading #${actualNewCount}: ${activityName}`)
         if (targetIsCoros) {
-          let corosResult
           try {
-            corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
-          } catch (ulErr) {
-            if (isCorosTokenError(ulErr)) {
-              corosSession = await getCorosSession(true)
-            } else {
-              corosSession = await getCorosSession()
+            const corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
+            if (corosResult?.duplicate) {
+              updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
+              result.skipped++
+              continue
             }
-            corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
-          }
-          if (corosResult?.duplicate) {
-            updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
-            result.skipped++
-            continue
+            updateSyncRecord(record._id, { status: 'success' })
+            result.success++
+            actualNewCount++
+          } catch (ulErr) {
+            // token 失效（如 1019）则刷新 session 重试一次；仍失败则冒泡到外层标 failed
+            if (isCorosTokenError(ulErr)) {
+              try {
+                corosSession = await getCorosSession(true)
+                const retry = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
+                if (retry?.duplicate) {
+                  updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
+                  result.skipped++
+                  continue
+                }
+                updateSyncRecord(record._id, { status: 'success' })
+                result.success++
+                actualNewCount++
+              } catch (retryErr) {
+                throw retryErr
+              }
+            } else {
+              throw ulErr
+            }
           }
         } else {
           try {
