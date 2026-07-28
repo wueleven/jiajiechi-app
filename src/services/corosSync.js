@@ -396,7 +396,8 @@ export async function downloadCorosFit(corosSession, activityId, sportType) {
     const files = Object.keys(zip.files)
     const fitFile = files.find(f => f.endsWith('.fit')) || files[0]
     const fitData = await zip.files[fitFile].async('uint8array')
-    return { path: fitFile, data: fitData }
+    // 参考 garmin-sync-coros：统一用 {activityId}.fit 命名（zip 内路径可能带文件夹，不适合作上传文件名）
+    return { path: `${activityId}.fit`, data: fitData }
   }
 
   return { path: `${activityId}.fit`, data: byteArray }
@@ -407,8 +408,13 @@ export async function downloadCorosFit(corosSession, activityId, sportType) {
 function formatCorosTime(timeStr) {
   if (!timeStr) return ''
   if (typeof timeStr === 'number') {
-    const d = new Date(timeStr)
-    return d.toISOString().replace('T', ' ').substring(0, 19)
+    // COROS 的 startTime 是秒级时间戳（参考 garmin-sync-coros），
+    // 小于 1e12 视为秒，直接传给 new Date 会被当成毫秒解析成 1970 年
+    const ms = timeStr < 1e12 ? timeStr * 1000 : timeStr
+    const d = new Date(ms)
+    // 用本地时间格式化，与 Garmin 的 startTimeLocal 可比
+    const pad = n => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
   }
   return String(timeStr).substring(0, 19)
 }

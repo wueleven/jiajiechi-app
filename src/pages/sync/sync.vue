@@ -129,7 +129,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated } from 'vue'
+import { ref, watch, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
 import { getLastSyncPrefs, saveLastSyncPrefs } from '../../services/storage.js'
@@ -182,10 +182,15 @@ function buildSyncPairs() {
   available.forEach(p => { dirs[p.id] = pairDirections.value[p.id] || false })
 
   if (!available.find(p => p.id === selectedPairId.value)) {
-    // 恢复上次选择的同步方向（若存在且当前仍可用）
+    // 恢复上次选择的同步方向（若存在且当前仍可用），兼容旧版存储的 direction 字段
     const last = getLastSyncPrefs()
-    const restored = last && available.find(p => p.id === last.direction)
+    const lastPairId = last?.pairId || last?.direction
+    const restored = lastPairId && available.find(p => p.id === lastPairId)
     selectedPairId.value = restored ? restored.id : (available.length > 0 ? available[0].id : '')
+    // 恢复上次的箭头方向（是否反向）
+    if (restored && typeof last.reversed === 'boolean') {
+      dirs[restored.id] = last.reversed
+    }
   }
   syncPairs.value = available
   pairDirections.value = dirs
@@ -194,14 +199,18 @@ function buildSyncPairs() {
 // 保存当前同步选项（方向/数量/强制重同步），供下次进入页面恢复
 function persistPrefs() {
   saveLastSyncPrefs({
-    direction: selectedPairId.value,
+    pairId: selectedPairId.value,
+    reversed: !!pairDirections.value[selectedPairId.value],
     syncCount: syncCount.value,
     forceResync: forceResync.value,
   })
 }
 
-function onPairSelect(id) { selectedPairId.value = id }
-function onSwapDirection(id) { pairDirections.value[id] = !pairDirections.value[id] }
+function onPairSelect(id) { selectedPairId.value = id; persistPrefs() }
+function onSwapDirection(id) { pairDirections.value[id] = !pairDirections.value[id]; persistPrefs() }
+
+// 数量/强制重同步变化时也自动记住
+watch([syncCount, forceResync], persistPrefs)
 
 function getCurrentDirection() {
   const pair = syncPairs.value.find(p => p.id === selectedPairId.value)
@@ -269,7 +278,14 @@ async function onMfaSubmit() {
 function goBind() { router.push('/bind') }
 function goBack() { router.push('/index') }
 
-onMounted(loadBindInfo)
+function restorePrefs() {
+  const last = getLastSyncPrefs()
+  if (!last) return
+  if (last.syncCount) syncCount.value = String(last.syncCount)
+  if (typeof last.forceResync === 'boolean') forceResync.value = last.forceResync
+}
+
+onMounted(() => { restorePrefs(); loadBindInfo() })
 onActivated(loadBindInfo)
 </script>
 

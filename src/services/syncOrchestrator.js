@@ -133,8 +133,8 @@ export async function syncActivities(direction, forceResync = false, syncCount =
       }
     }
 
-    // 获取目标平台最新活动时间（Garmin 目标时）
-    if (!targetIsCoros && !forceResync) {
+    // 获取目标平台最新活动时间（仅用于佳明→佳明的时间对比；高驰→佳明不做跨平台时间对比）
+    if (!targetIsCoros && !sourceIsCoros && !forceResync) {
       const targetActs = await fetchActivities(targetApiBase, targetOauth2, 0, 1)
       latestTargetActStartTime = targetActs[0]?.startTimeLocal ?? '0'
     }
@@ -142,8 +142,8 @@ export async function syncActivities(direction, forceResync = false, syncCount =
     result.total = sourceActs.length
     const latestSourceActStartTime = sourceActs[0]?.startTimeLocal ?? '0'
 
-    // 4. 检查是否有新活动
-    if (!targetIsCoros && latestSourceActStartTime === latestTargetActStartTime) {
+    // 4. 检查是否有新活动（仅佳明→佳明方向）
+    if (!targetIsCoros && !sourceIsCoros && latestSourceActStartTime === latestTargetActStartTime) {
       return { success: true, message: '没有要同步的活动', data: result }
     }
 
@@ -157,6 +157,11 @@ export async function syncActivities(direction, forceResync = false, syncCount =
         if (!latestTargetActStartTime || act.startTimeLocal > latestTargetActStartTime) {
           shouldSync = true
         }
+      } else if (sourceIsCoros) {
+        // 参考 garmin-sync-coros：高驰→佳明不做跨平台时间对比（时区/格式不可靠），
+        // 用本地成功记录去重，佳明端 409 重复判定兜底
+        const synced = findSyncRecord({ activityId: String(act.activityId), direction, status: 'success' })
+        shouldSync = forceResync || !synced
       } else {
         if (act.startTimeLocal > latestTargetActStartTime) {
           shouldSync = true
@@ -204,44 +209,28 @@ export async function syncActivities(direction, forceResync = false, syncCount =
         // 上传到目标平台
         console.log(`Uploading #${actualNewCount}: ${activityName}`)
         if (targetIsCoros) {
+          let corosResult
           try {
-            const corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
-            if (corosResult?.duplicate) {
-              updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
-              result.skipped++
-              continue
-            }
-            if (!corosResult?.success) {
-              // 显式判失败：uploadToCoros 返回 success:false 但未 throw 的情况（如 COROS 返回非 8E16FCC7/0000）
-              throw new Error(`COROS 导入未成功: ${JSON.stringify(corosResult)}`)
-            }
-            updateSyncRecord(record._id, { status: 'success' })
-            result.success++
-            actualNewCount++
+            corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
           } catch (ulErr) {
             // token 失效（如 1019）则刷新 session 重试一次；仍失败则冒泡到外层标 failed
             if (isCorosTokenError(ulErr)) {
-              try {
-                corosSession = await getCorosSession(true)
-                const retry = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
-                if (retry?.duplicate) {
-                  updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
-                  result.skipped++
-                  continue
-                }
-                if (!retry?.success) {
-                  throw new Error(`COROS 导入重试未成功: ${JSON.stringify(retry)}`)
-                }
-                updateSyncRecord(record._id, { status: 'success' })
-                result.success++
-                actualNewCount++
-              } catch (retryErr) {
-                throw retryErr
-              }
+              corosSession = await getCorosSession(true)
+              corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession)
             } else {
               throw ulErr
             }
           }
+          if (corosResult?.duplicate) {
+            updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
+            result.skipped++
+            continue
+          }
+          if (!corosResult?.success) {
+            // 显式判失败：uploadToCoros 返回 success:false 但未 throw 的情况
+            throw new Error(`COROS 导入未成功: ${JSON.stringify(corosResult)}`)
+          }
+          // 成功计数统一在循环尾部处理，避免重复累加
         } else {
           try {
             await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
