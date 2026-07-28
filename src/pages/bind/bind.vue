@@ -31,11 +31,12 @@
     <!-- 说明 -->
     <div class="card">
       <div class="tip-title">使用说明</div>
-      <div class="tip-item">1. Garmin 账号使用账号密码绑定，支持 MFA 验证</div>
-      <div class="tip-item">2. COROS 使用注册邮箱和密码绑定</div>
-      <div class="tip-item">3. 绑定后无需再次登录，可直接同步数据</div>
-      <div class="tip-item">4. COROS 需保存密码用于自动刷新登录状态</div>
-      <div class="tip-item">5. 如需更换账号，先解绑再重新绑定即可</div>
+      <div class="tip-item">1. 三个平台按需绑定，绑定任意两个及以上即可在它们之间同步数据</div>
+      <div class="tip-item">2. Garmin 国服 / 国际服使用账号密码登录，开启了两步验证的账号需输入验证码</div>
+      <div class="tip-item">3. COROS 使用账号密码登录，账号可为注册邮箱或手机号</div>
+      <div class="tip-item">4. 账号密码加密后仅保存在手机本地，用于登录官方服务器及登录状态过期后自动续期，不会上传</div>
+      <div class="tip-item">5. 修改过平台密码或长期未使用导致同步失败时，重新绑定即可恢复</div>
+      <div class="tip-item">6. 解除绑定会立即删除本机保存的该平台账号信息；更换账号先解绑再重新绑定</div>
     </div>
 
     <!-- 登录弹窗 -->
@@ -44,8 +45,8 @@
         <div class="modal-title">绑定 {{ currentPlatformName }}</div>
         <div class="modal-desc">请输入你的平台账号和密码</div>
         <div class="input-group">
-          <div class="input-label">{{ currentPlatform === 'coros' ? '邮箱' : '账号' }}</div>
-          <input class="modal-input" :placeholder="currentPlatform === 'coros' ? '请输入 COROS 邮箱' : '请输入账号/邮箱'" v-model="username" />
+          <div class="input-label">账号</div>
+          <input class="modal-input" :placeholder="currentPlatform === 'coros' ? '请输入邮箱或手机号' : '请输入账号/邮箱'" v-model="username" />
         </div>
         <div class="input-group">
           <div class="input-label">密码</div>

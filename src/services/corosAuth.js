@@ -74,7 +74,7 @@ export async function corosLogin(email, password) {
  */
 export async function corosBind(email, password) {
   if (!email || !password) {
-    return { success: false, message: '请输入邮箱和密码' }
+    return { success: false, message: '请输入账号和密码' }
   }
 
   try {
