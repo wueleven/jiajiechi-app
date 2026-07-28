@@ -28,14 +28,14 @@
 
 ### 前置申请（必须，向华米商务提交）
 
-1. 准备「佳捷驰」的**应用签名哈希**和**包名 `com.jjt.app`**：
+1. 准备「佳捷驰」的**应用签名哈希**和**包名 `com.jiajiechi.app`**：
    - 用发布签名 keystore 跑：`keytool -exportcert -alias <alias> -keystore <jjt.keystore> | openssl sha1 -binary | openssl base64`
    - 注意：华米校验的是**最终发布包的签名**，测试签名和正式签名要一致（官方 Sample 用 `android_key.jks` 签名才能过校验）。
 2. 向**华米商务**提交接入申请，材料（来自官方 `接入须知.md`）：
    - 应用名称（如：佳捷驰）
    - 应用 LOGO 链接
    - 应用介绍
-   - **应用包名：`com.jjt.app`**
+   - **应用包名：`com.jiajiechi.app`**
    - **应用签名哈希**（上一步算出来的）
 3. 华米审核通过后，分配一个**绑定本包名+签名的 `APP_ID`**（官方 Sample 的 APP_ID 是
    `e8f70b0f-814d-482a-89db-ab25a8a59539`，仅作示例，我们得用自己申请的）。

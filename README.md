@@ -44,7 +44,7 @@
 
 ```
 src/
-  pages/          # 四个页面：首页(index)、账号绑定(bind)、同步(sync)、记录(history)
+  pages/          # 五个页面：首页(index)、账号绑定(bind)、同步(sync)、记录(history)、关于(about)
   services/
     garminAuth.js / garminSync.js   # Garmin 登录与上传下载
     corosAuth.js / corosSync.js     # 高驰登录与上传下载
@@ -90,7 +90,7 @@ adb -s <设备ID> install -r app/build/outputs/apk/debug/app-debug.apk
 
 - **高驰 → Garmin 上传**：早期版本因请求层把文件悄悄转成了文本导致 `HTTP 415`，已在 v1.9 修复；重复活动 Garmin 返回 `409`，已改为「跳过」而非「失败」。
 - 本项目为纯本地运行，**不使用任何云函数**，所有请求从手机直接发出。
-- 仓库为私有，公开前需清理代码中可能内嵌的密钥（如 COROS 相关编号、OSS 桶名等）。
+- 代码中内嵌的 COROS 应用编号等为平台通用常量（所参考的开源项目中同样公开使用），不属于个人密钥；用户的账号密码、登录凭证只保存在手机本地，不会进入本仓库。签名 keystore 已被 `.gitignore` 排除。
 
 ## 参考与致谢
 
@@ -105,4 +105,4 @@ adb -s <设备ID> install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## 许可证
 
-待定（当前私有，未选定开源协议）。
+本项目采用 **GNU GPL v3** 许可证开源，详见仓库根目录 [LICENSE](LICENSE) 文件。
