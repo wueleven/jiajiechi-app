@@ -111,7 +111,7 @@ import { useRouter } from 'vue-router'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { getBindInfo } from '../../services/storage.js'
-import logoImg from '../../assets/logo.jpg'
+import logoImg from '../../assets/logo.png'
 import pkg from '../../../package.json'
 
 const router = useRouter()

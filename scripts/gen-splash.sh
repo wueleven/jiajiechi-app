@@ -1,17 +1,17 @@
 #!/bin/bash
-# 从 src/assets/logo.jpg 生成安卓全套启动屏图片（白底 + logo 居中）
+# 从 src/assets/logo.png 生成安卓全套启动屏图片（白底 + logo 居中）
 # 留白色 FDFDFB 与 logo 原图底色一致，避免拼接接缝
-# logo 尺寸取短边的 30%，上限 256px（原图分辨率，避免放大发糊）
+# logo 尺寸取短边的 30%，上限 512px（原图分辨率，避免放大发糊）
 set -e
 cd "$(dirname "$0")/.."
-SRC=src/assets/logo.jpg
+SRC=src/assets/logo.png
 RES=android/app/src/main/res
 
 gen() { # 目录 宽 高
   local dir="$RES/$1" w=$2 h=$3
   local short=$(( w < h ? w : h ))
   local logo=$(( short * 30 / 100 ))
-  [ $logo -gt 256 ] && logo=256
+  [ $logo -gt 512 ] && logo=512
   sips -s format png -z "$logo" "$logo" "$SRC" --out "$dir/splash.png" >/dev/null
   sips --padToHeightWidth "$h" "$w" --padColor FDFDFB "$dir/splash.png" >/dev/null
   echo "$1: ${w}x${h} (logo ${logo}px)"

@@ -1,10 +1,10 @@
 #!/bin/bash
-# 从 src/assets/logo.jpg 生成安卓全套规范分辨率启动图标
+# 从 src/assets/logo.png 生成安卓全套规范分辨率启动图标
 # 每档密度：ic_launcher(方图) / ic_launcher_round / ic_launcher_foreground(适配性前景图，logo 居中占 61% 安全区)
 # 留白色 FDFDFB 与 logo 原图底色一致，避免拼接接缝
 set -e
 cd "$(dirname "$0")/.."
-SRC=src/assets/logo.jpg
+SRC=src/assets/logo.png
 RES=android/app/src/main/res
 
 # 密度  launcher尺寸  前景画布  前景内logo尺寸
