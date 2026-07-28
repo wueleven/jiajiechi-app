@@ -264,6 +264,10 @@ async function loginStep1(username, password, region) {
           /value="([^"]+)"\s+name="execution"/,
           /id="execution"\s+value="([^"]+)"/,
           /execution['":\s]+['"]([^'"]{20,})['"]/,
+          // 国服 MFA 页面可能的变体
+          /name="lt"\s+value="([^"]+)"/,
+          /<input[^>]+name="execution"[^>]+value="([^"]+)"/i,
+          /<input[^>]+value="([^"]+)"[^>]+name="execution"/i,
         ];
         for (const pat of execPatterns) {
           const m = pat.exec(mfaHtml);
@@ -274,6 +278,13 @@ async function loginStep1(username, password, region) {
           // 输出 MFA 页面片段用于调试
           console.log("loginStep1: MFA page snippet:", mfaHtml.substring(0, 800));
         }
+
+        // 国服 MFA 页面使用 _csrf 做会话标识（不是 execution），同时带 fromPage=setupEnterMfaCode
+        const csrfMatch = /name="_csrf"\s+value="([^"]+)"/i.exec(mfaHtml);
+        const mfaCsrfToken = csrfMatch ? csrfMatch[1] : "";
+        const fromPageMatch = /name="fromPage"\s+value="([^"]+)"/i.exec(mfaHtml);
+        const mfaFromPage = fromPageMatch ? fromPageMatch[1] : (mfaCsrfToken ? "setupEnterMfaCode" : "");
+        console.log("loginStep1: MFA _csrf:", mfaCsrfToken ? "found" : "not found", "fromPage:", mfaFromPage || "(none)");
 
         // 提取 MFA 表单的 form action URL
         const formActionMatch = /<form[^>]+action="([^"]+)"/i.exec(mfaHtml);
@@ -290,7 +301,7 @@ async function loginStep1(username, password, region) {
         const cookieStr = allCookies.join("; ");
         console.log("loginStep1: collected cookies count:", allCookies.length);
 
-        return { mfaRequired: true, execution: mfaExecution, cookieStr, urls, mfaEndpoint: redirectUrl };
+        return { mfaRequired: true, execution: mfaExecution, csrfToken: mfaCsrfToken, fromPage: mfaFromPage, cookieStr, urls, mfaEndpoint: redirectUrl };
       }
 
       const redirectRes = await session.get(redirectUrl, {
@@ -371,6 +382,13 @@ async function loginStep1(username, password, region) {
     const mfaExecution = mfaExecMatch ? mfaExecMatch[1] : "";
     console.log("MFA required (from HTML), execution:", mfaExecution ? "found" : "not found");
 
+    // 国服 MFA 页面使用 _csrf 做会话标识（不是 execution），同时带 fromPage=setupEnterMfaCode
+    const csrfMatch = /name="_csrf"\s+value="([^"]+)"/i.exec(html);
+    const mfaCsrfToken = csrfMatch ? csrfMatch[1] : "";
+    const fromPageMatch = /name="fromPage"\s+value="([^"]+)"/i.exec(html);
+    const mfaFromPage = fromPageMatch ? fromPageMatch[1] : (mfaCsrfToken ? "setupEnterMfaCode" : "");
+    console.log("loginStep1: MFA _csrf:", mfaCsrfToken ? "found" : "not found", "fromPage:", mfaFromPage || "(none)");
+
     // 提取 MFA 表单 action
     const formActionMatch = /<form[^>]+action="([^"]+)"/i.exec(html);
     const mfaFormAction = formActionMatch ? formActionMatch[1] : "";
@@ -386,6 +404,8 @@ async function loginStep1(username, password, region) {
     return {
       mfaRequired: true,
       execution: mfaExecution,
+      csrfToken: mfaCsrfToken,
+      fromPage: mfaFromPage,
       cookieStr,
       urls,
       mfaEndpoint,
@@ -412,7 +432,7 @@ async function loginStep1(username, password, region) {
 /**
  * 第二步：提交 MFA 验证码，获取 ticket
  */
-async function loginStep2Mfa(execution, mfaCode, cookieStr, urls, mfaEndpoint) {
+async function loginStep2Mfa(execution, mfaCode, cookieStr, urls, mfaEndpoint, csrfToken, fromPage) {
   const session = createTrackedSession();
   if (cookieStr) {
     session.defaults.headers.common["Cookie"] = cookieStr;
@@ -422,14 +442,25 @@ async function loginStep2Mfa(execution, mfaCode, cookieStr, urls, mfaEndpoint) {
   // MFA 提交 URL：优先使用保存的 MFA 端点，否则用默认的 verifyMFA 路径
   const mfaSubmitUrl = mfaEndpoint || `${urls.ssoOrigin}/sso/verifyMFA/loginEnterMfaCode`;
 
+  // 国服 MFA 页面用 _csrf 做会话标识；国际服/老版本用 execution
+  // 两者都带时两个都发，服务器会忽略不认识的字段
   const formData = {
     "mfa-code": mfaCode,
     embed: "true",
-    _eventId: "submit",
   };
+  if (csrfToken) {
+    formData._csrf = csrfToken;
+  }
+  if (fromPage) {
+    formData.fromPage = fromPage;
+  }
   if (execution) {
     formData.execution = execution;
   }
+  if (!csrfToken && !execution) {
+    formData._eventId = "submit";
+  }
+  console.log("loginStep2Mfa: submit fields:", Object.keys(formData).join(","));
 
   console.log("loginStep2Mfa: posting to", mfaSubmitUrl.substring(0, 100), "code length:", mfaCode.length);
 
@@ -632,6 +663,8 @@ async function bindWithPassword(openid, event) {
         password,
         region,
         execution: step1Result.execution,
+        csrfToken: step1Result.csrfToken || "",
+        fromPage: step1Result.fromPage || "",
         cookieStr: step1Result.cookieStr,
         urls: step1Result.urls,
         mfaEndpoint: step1Result.mfaEndpoint,
@@ -681,7 +714,7 @@ async function submitMfa(openid, event) {
     }
 
     // 提交 MFA 验证码
-    const step2Result = await loginStep2Mfa(state.execution, mfaCode, state.cookieStr, state.urls, state.mfaEndpoint);
+    const step2Result = await loginStep2Mfa(state.execution, mfaCode, state.cookieStr, state.urls, state.mfaEndpoint, state.csrfToken, state.fromPage);
 
     // 完成 OAuth 流程
     const oauth1Data = await getOauth1Token(step2Result.ticket, state.urls);
@@ -788,6 +821,8 @@ async function saveMfaState(openid, platform, state) {
     password: state.password ? encryptPassword(state.password) : "",
     region: state.region,
     execution: state.execution || "",
+    csrfToken: state.csrfToken || "",
+    fromPage: state.fromPage || "",
     cookieStr: state.cookieStr || "",
     urls: state.urls || {},
     mfaEndpoint: state.mfaEndpoint || "",
@@ -889,6 +924,8 @@ async function autoRelogin(openid, event) {
         password,
         region,
         execution: step1Result.execution,
+        csrfToken: step1Result.csrfToken || "",
+        fromPage: step1Result.fromPage || "",
         cookieStr: step1Result.cookieStr,
         urls: step1Result.urls,
         mfaEndpoint: step1Result.mfaEndpoint,

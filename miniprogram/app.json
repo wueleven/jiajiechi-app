@@ -3,13 +3,14 @@
     "pages/index/index",
     "pages/bind/bind",
     "pages/sync/sync",
-    "pages/history/history"
+    "pages/history/history",
+    "pages/about/about"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#0052B9",
-    "navigationBarTitleText": "佳捷同",
+    "navigationBarTitleText": "佳捷驰",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {

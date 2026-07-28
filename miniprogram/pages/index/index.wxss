@@ -262,3 +262,11 @@ page {
   left: 50%;
   transform: translateX(-50%);
 }
+
+/* 底部版本号 */
+.version-footer {
+  text-align: center;
+  font-size: 24rpx;
+  color: #bbb;
+  padding: 24rpx 0 8rpx;
+}

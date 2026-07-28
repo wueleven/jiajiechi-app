@@ -20,6 +20,9 @@ const SYNC_PAIRS = [
   },
 ];
 
+// 同步选项记忆的本地存储 key
+const SYNC_PREFS_KEY = "lastSyncPrefs";
+
 Page({
   data: {
     bindStatus: {
@@ -62,6 +65,19 @@ Page({
   },
 
   onLoad() {
+    // 恢复上次的同步选项（配对/方向在 buildSyncPairs 中恢复）
+    try {
+      const prefs = wx.getStorageSync(SYNC_PREFS_KEY);
+      if (prefs) {
+        this._savedPrefs = prefs;
+        const idx = this.data.syncCountOptions.findIndex((o) => o.value === prefs.syncCount);
+        this.setData({
+          syncCountIndex: idx >= 0 ? idx : this.data.syncCountIndex,
+          syncCountLabel: idx >= 0 ? this.data.syncCountOptions[idx].label : this.data.syncCountLabel,
+          forceResync: !!prefs.forceResync,
+        });
+      }
+    } catch (e) { /* 忽略存储读取失败 */ }
     this.loadBindInfo();
   },
 
@@ -97,14 +113,23 @@ Page({
       (p) => bindStatus[p.left.key] && bindStatus[p.right.key]
     );
 
-    // 保留已有的方向状态
+    // 保留已有的方向状态，并用上次记忆的方向初始化
+    const saved = this._savedPrefs || {};
     const oldDirections = this.data.pairDirections;
     const pairDirections = {};
     available.forEach((p) => {
-      pairDirections[p.id] = oldDirections[p.id] || false;
+      let dir = oldDirections[p.id];
+      if (dir === undefined && saved.pairId === p.id) {
+        dir = !!saved.reversed;
+      }
+      pairDirections[p.id] = dir || false;
     });
 
     let selectedPairId = this.data.selectedPairId;
+    if (!selectedPairId && saved.pairId && available.find((p) => p.id === saved.pairId)) {
+      // 优先恢复上次选中的配对
+      selectedPairId = saved.pairId;
+    }
     if (!available.find((p) => p.id === selectedPairId)) {
       selectedPairId = available.length > 0 ? available[0].id : "";
     }
@@ -113,11 +138,27 @@ Page({
   },
 
   /**
+   * 保存当前同步选项（配对/方向/数量/强制重新同步）到本地存储
+   */
+  saveSyncPrefs() {
+    const { selectedPairId, pairDirections, syncCountOptions, syncCountIndex, forceResync } = this.data;
+    if (!selectedPairId) return;
+    try {
+      wx.setStorageSync(SYNC_PREFS_KEY, {
+        pairId: selectedPairId,
+        reversed: !!pairDirections[selectedPairId],
+        syncCount: syncCountOptions[syncCountIndex].value,
+        forceResync,
+      });
+    } catch (e) { /* 忽略存储写入失败 */ }
+  },
+
+  /**
    * 选择配对
    */
   onPairSelect(e) {
     const id = e.currentTarget.dataset.id;
-    this.setData({ selectedPairId: id });
+    this.setData({ selectedPairId: id }, () => this.saveSyncPrefs());
   },
 
   /**
@@ -126,7 +167,7 @@ Page({
   onSwapDirection(e) {
     const id = e.currentTarget.dataset.id;
     const key = `pairDirections.${id}`;
-    this.setData({ [key]: !this.data.pairDirections[id] });
+    this.setData({ [key]: !this.data.pairDirections[id] }, () => this.saveSyncPrefs());
   },
 
   /**
@@ -254,10 +295,10 @@ Page({
     this.setData({
       syncCountIndex: idx,
       syncCountLabel: this.data.syncCountOptions[idx].label,
-    });
+    }, () => this.saveSyncPrefs());
   },
 
   onToggleForceResync() {
-    this.setData({ forceResync: !this.data.forceResync });
+    this.setData({ forceResync: !this.data.forceResync }, () => this.saveSyncPrefs());
   },
 });

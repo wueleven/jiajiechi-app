@@ -353,7 +353,15 @@ async function uploadGarminActivity(apiClient, fitData, filename) {
     maxContentLength: 10 * 1024 * 1024,
   });
   console.log("upload to garmin activity:", JSON.stringify(res.data).substring(0, 200));
-  return res.data;
+
+  // 佳明返回 202 + detailedImportResult.uploadId 为空时，表示服务端已静默判定为重复活动
+  const importResult = res.data && res.data.detailedImportResult;
+  const uploadId = importResult && importResult.uploadId;
+  if (importResult && (uploadId === null || uploadId === undefined || uploadId === "")) {
+    console.log("upload to garmin: empty uploadId, treated as duplicate");
+    return { duplicate: true, data: res.data };
+  }
+  return { duplicate: false, data: res.data };
 }
 
 // ==================== 同步逻辑（完全对应 syncGarminCN2GarminGlobal） ====================
@@ -452,33 +460,11 @@ async function syncActivities(openid, event) {
     let targetClient = null;
     let targetApi = null;
     let corosSession = null;
-    let latestTargetActStartTime = "0";
 
     if (targetIsCoros) {
       // COROS 目标：获取 COROS session
       corosSession = await getCorosSession(openid);
       console.log("COROS session obtained successfully");
-
-      // COROS 无法直接查询最近活动，使用按方向存储的最后同步活动时间来判断
-      if (forceResync) {
-        // 强制重新同步：清除该方向的 lastSyncedActTime，所有活动重新上传
-        const directionKey = `lastSyncedActTime_${direction}`;
-        await db.collection("users").where({ openid }).update({
-          data: { [directionKey]: db.command.remove() },
-        });
-        latestTargetActStartTime = "0";
-        console.log("forceResync=true: cleared lastSyncedActTime, will re-sync all activities");
-      } else {
-        const userRes = await db.collection("users").where({ openid }).get();
-        if (userRes.data.length > 0) {
-          const directionKey = `lastSyncedActTime_${direction}`;
-          const lastSyncedActTime = userRes.data[0][directionKey];
-          if (lastSyncedActTime) {
-            latestTargetActStartTime = lastSyncedActTime;
-            console.log(`Using per-direction lastSyncedActTime as COROS baseline: ${lastSyncedActTime}`);
-          }
-        }
-      }
     } else {
       // Garmin 目标：获取目标 Garmin API 客户端
       targetApi = await getPlatformApi(openid, targetPlatform);
@@ -507,15 +493,58 @@ async function syncActivities(openid, event) {
       console.log(`Target user: ${targetProfile.fullName || targetProfile.userName}`);
     }
 
+    // 目标为高驰时预取其现有活动的开始时间（秒级时间戳）：
+    // 高驰导入接口异步处理，响应不返回重复信息，只能上传前主动对照判重
+    let corosExistingTimes = [];
+    if (targetIsCoros) {
+      try {
+        let existing;
+        try {
+          existing = await fetchCorosActivities(corosSession, 1, 200);
+        } catch (preErr) {
+          if (isCorosTokenError(preErr)) {
+            corosSession = await getCorosSession(openid, true);
+            existing = await fetchCorosActivities(corosSession, 1, 200);
+          } else throw preErr;
+        }
+        corosExistingTimes = (existing || [])
+          .map((a) => a.corosRaw && a.corosRaw.startTime)
+          .filter((t) => typeof t === "number")
+          .map((t) => (t < 1e12 ? t : Math.floor(t / 1000)));
+        console.log(`高驰已有活动预检: ${corosExistingTimes.length} 条`);
+      } catch (preErr) {
+        // 预检失败不阻塞同步，仅失去事前判重能力
+        console.warn("高驰已有活动预检失败:", preErr.message);
+      }
+    }
+
+    // 统一去重策略（参考安卓版）：不做跨平台时间游标对比，
+    // 已有「成功」或「目标平台已存在(skipped)」记录即视为已同步；
+    // 目标平台自身的重复识别（佳明 409/空 uploadId、高驰预检）作为兜底保障
+    let syncedIds = new Set();
+    if (!forceResync) {
+      try {
+        const syncedRes = await db.collection("syncRecords")
+          .where({ openid, direction, status: db.command.in(["success", "skipped"]) })
+          .field({ activityId: true })
+          .limit(1000)
+          .get();
+        syncedIds = new Set(syncedRes.data.map((r) => r.activityId));
+        console.log(`记录级去重: 已同步记录 ${syncedIds.size} 条`);
+      } catch (e) {
+        console.warn("预取已同步记录失败:", e.message);
+      }
+    }
+
     // 拉取源平台最近活动
     let sourceActs;
     if (sourceIsCoros) {
-      // COROS API 对 pageSize 有严格限制，固定每页 20 条分页拉取，直到拉够或没有更多
+      // COROS 固定每页 20 条分页拉取，直到拉够或没有更多
       try {
         sourceActs = await fetchCorosActivitiesUpTo(sourceCorosSession, fetchAll ? Infinity : syncLimit);
       } catch (err) {
         // COROS token 在服务端失效，强制刷新 token 后重试一次
-        if (err.message && err.message.includes("Access token is invalid")) {
+        if (isCorosTokenError(err)) {
           console.log("COROS access token invalid, forcing refresh...");
           sourceCorosSession = await getCorosSession(openid, true);
           sourceActs = await fetchCorosActivitiesUpTo(sourceCorosSession, fetchAll ? Infinity : syncLimit);
@@ -524,32 +553,24 @@ async function syncActivities(openid, event) {
         }
       }
       console.log(`COROS source: fetched ${sourceActs.length} activities`);
+    } else if (fetchAll) {
+      // 全部同步：每页 20 条分页拉取，避免 limit=999 单次大请求被截断/超时
+      sourceActs = [];
+      let offset = 0;
+      const GARMIN_PAGE = 20;
+      while (offset < 1000) {
+        const batch = await fetchActivities(sourceClient, offset, GARMIN_PAGE);
+        if (!batch || batch.length === 0) break;
+        sourceActs.push(...batch);
+        if (batch.length < GARMIN_PAGE) break;
+        offset += GARMIN_PAGE;
+      }
     } else {
       sourceActs = await fetchActivities(sourceClient, 0, syncLimit);
     }
 
-    // 如果是 Garmin 目标，拉取目标平台最近活动来获取最新时间
-    if (!targetIsCoros) {
-      if (forceResync) {
-        latestTargetActStartTime = "0";
-        console.log("forceResync=true: will re-sync all activities to Garmin target");
-      } else {
-        const targetActs = await fetchActivities(targetClient, 0, 1);
-        latestTargetActStartTime = targetActs[0]?.startTimeLocal ?? "0";
-      }
-    }
-
     result.total = sourceActs.length;
-    const latestSourceActStartTime = sourceActs[0]?.startTimeLocal ?? "0";
-
-    console.log(`Source activities: ${sourceActs.length}, target latest: ${latestTargetActStartTime}, source latest: ${latestSourceActStartTime}`);
-
-    // 如果没有新活动（仅 Garmin 目标时可精确判断）
-    if (!targetIsCoros && latestSourceActStartTime === latestTargetActStartTime) {
-      const actName = sourceActs[0]?.activityName || "无";
-      console.log(`没有要同步的活动内容, 最近的活动: 【${actName}】, 开始于: 【${latestSourceActStartTime}】`);
-      return { success: true, message: `没有要同步的活动，最近活动: ${actName}`, data: result };
-    }
+    console.log(`Source activities: ${sourceActs.length}`);
 
     // 倒序同步（从最早的新活动开始）
     const reversedActs = [...sourceActs].reverse();
@@ -557,194 +578,198 @@ async function syncActivities(openid, event) {
 
     for (let i = 0; i < reversedActs.length; i++) {
       const act = reversedActs[i];
+      const activityName = act.activityName || "未知活动";
+      const activityId = String(act.activityId);
 
-      // 判断是否需要同步
-      let shouldSync = false;
-      if (targetIsCoros) {
-        // COROS 目标：使用最后同步时间比较，或同步所有活动（如果没有最后同步时间）
-        if (!latestTargetActStartTime || act.startTimeLocal > latestTargetActStartTime) {
-          shouldSync = true;
-        }
-      } else {
-        // Garmin 目标：与目标平台最新活动时间比较
-        if (act.startTimeLocal > latestTargetActStartTime) {
-          shouldSync = true;
-        }
+      // 记录级去重：已有成功/跳过记录的活动直接跳过（不重复写记录）
+      if (!forceResync && syncedIds.has(activityId)) {
+        result.skipped++;
+        continue;
       }
 
-      if (shouldSync) {
-        const activityName = act.activityName || "未知活动";
-        const activityId = String(act.activityId);
-
-        try {
-          // 创建同步记录
-          const recordRes = await db.collection("syncRecords").add({
+      // 高驰端已存在判重：用佳明 startTimeGMT（UTC）与高驰秒级时间戳对比，
+      // 绝对时间对绝对时间不受时区影响；同一活动的 FIT 开始时间一致，留 60s 容差
+      if (targetIsCoros && corosExistingTimes.length > 0 && act.startTimeGMT) {
+        const gmtSec = Math.floor(Date.parse(act.startTimeGMT.replace(" ", "T") + "Z") / 1000);
+        if (gmtSec && corosExistingTimes.some((t) => Math.abs(t - gmtSec) <= 60)) {
+          await db.collection("syncRecords").add({
             data: {
-              openid,
-              direction,
-              activityId,
-              activityName,
+              openid, direction, activityId, activityName,
               activityTime: act.startTimeLocal || "",
-              status: "syncing",
-              errorMsg: "",
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              status: "skipped", errorMsg: "高驰已存在该活动",
+              createdAt: new Date(), updatedAt: new Date(),
             },
           });
+          result.skipped++;
+          console.log(`Skipped (precheck matched in COROS): ${activityName}`);
+          continue;
+        }
+      }
 
-          // 下载 FIT 文件
-          console.log(`Downloading: ${activityId} - ${activityName}`);
-          let fitFile;
-          if (sourceIsCoros) {
-            // 从 COROS 下载（需要 sportType 参数）
-            const corosSportType = act.sportType || (act.corosRaw && act.corosRaw.sportType);
+      try {
+        // 创建同步记录
+        const recordRes = await db.collection("syncRecords").add({
+          data: {
+            openid,
+            direction,
+            activityId,
+            activityName,
+            activityTime: act.startTimeLocal || "",
+            status: "syncing",
+            errorMsg: "",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+
+        // 下载 FIT 文件
+        console.log(`Downloading: ${activityId} - ${activityName}`);
+        let fitFile;
+        if (sourceIsCoros) {
+          // 从 COROS 下载（需要 sportType 参数），token 失效时强制刷新重试一次
+          const corosSportType = act.sportType || (act.corosRaw && act.corosRaw.sportType);
+          try {
             fitFile = await downloadCorosFit(sourceCorosSession, activityId, corosSportType);
-          } else {
-            // 从 Garmin 下载
-            try {
+          } catch (dlErr) {
+            if (isCorosTokenError(dlErr)) {
+              console.log(`COROS token invalid on download, refreshing session and retrying...`);
+              sourceCorosSession = await getCorosSession(openid, true);
+              fitFile = await downloadCorosFit(sourceCorosSession, activityId, corosSportType);
+            } else {
+              throw dlErr;
+            }
+          }
+        } else {
+          // 从 Garmin 下载
+          try {
+            fitFile = await downloadGarminActivity(sourceClient, act.activityId);
+          } catch (dlErr) {
+            if (shouldRefreshToken(dlErr)) {
+              console.log(`Download ${dlErr.response?.status || 'error'}, refreshing source token and retrying...`);
+              const newOauth2 = await refreshOauth2Token(sourceApi.oauth1, sourceApi.apiBase);
+              const docId = (await db.collection("users").where({ openid }).get()).data[0]._id;
+              await db.collection("users").doc(docId).update({ data: { [`${sourcePlatform}.oauth2`]: newOauth2 } });
+              sourceClient.defaults.headers.common["Authorization"] = `Bearer ${newOauth2.access_token}`;
               fitFile = await downloadGarminActivity(sourceClient, act.activityId);
-            } catch (dlErr) {
-              if (shouldRefreshToken(dlErr)) {
-                console.log(`Download ${dlErr.response?.status || 'error'}, refreshing source token and retrying...`);
-                const newOauth2 = await refreshOauth2Token(sourceApi.oauth1, sourceApi.apiBase);
-                const docId = (await db.collection("users").where({ openid }).get()).data[0]._id;
-                await db.collection("users").doc(docId).update({ data: { [`${sourcePlatform}.oauth2`]: newOauth2 } });
-                sourceClient.defaults.headers.common["Authorization"] = `Bearer ${newOauth2.access_token}`;
-                fitFile = await downloadGarminActivity(sourceClient, act.activityId);
-              } else {
-                throw dlErr;
-              }
+            } else {
+              throw dlErr;
             }
-          }
-
-          // 上传到目标平台
-          console.log(`Uploading #${actualNewActivityCount}: 【${activityName}】, 开始于 【${act.startTimeLocal}】, 活动ID: 【${activityId}】`);
-          if (targetIsCoros) {
-            // 上传到 COROS
-            let corosResult;
-            try {
-              corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
-              // 检查 COROS 导入结果（必须显式判断 success，不能只看 duplicate）
-              if (corosResult.duplicate) {
-                // COROS 已有该活动，跳过但不算失败
-                await db.collection("syncRecords").doc(recordRes._id).update({
-                  data: { status: "skipped", errorMsg: "COROS 已存在该活动", updatedAt: new Date() },
-                });
-                result.skipped++;
-                console.log(`Skipped (duplicate in COROS): ${activityName}`);
-                continue;
-              }
-              if (!corosResult.success) {
-                // COROS 返回非成功（如 1019 token 失效），必须视为失败并抛出，触发刷新重试
-                throw new Error(`COROS 导入失败: ${JSON.stringify(corosResult)}`);
-              }
-            } catch (ulErr) {
-              // token 失效（如 1019 Access token is invalid）则刷新 session 重试一次
-              const isTokenErr = ulErr.message && (ulErr.message.includes("Access token is invalid") || ulErr.message.includes("token"));
-              if (isTokenErr) {
-                try {
-                  console.log(`COROS token invalid, refreshing session and retrying... error: ${ulErr.message}`);
-                  corosSession = await getCorosSession(openid, true);
-                  const retry = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
-                  if (retry.duplicate) {
-                    await db.collection("syncRecords").doc(recordRes._id).update({
-                      data: { status: "skipped", errorMsg: "COROS 已存在该活动", updatedAt: new Date() },
-                    });
-                    result.skipped++;
-                    continue;
-                  }
-                  if (!retry.success) {
-                    throw new Error(`COROS 导入重试失败: ${JSON.stringify(retry)}`);
-                  }
-                } catch (retryErr) {
-                  throw retryErr; // 冒泡到外层 catch，标记该活动为失败
-                }
-              } else {
-                throw ulErr;
-              }
-            }
-          } else {
-            // 上传到 Garmin
-            try {
-              await uploadGarminActivity(targetClient, fitFile.data, fitFile.path);
-            } catch (ulErr) {
-              if (shouldRefreshToken(ulErr)) {
-                console.log(`Upload ${ulErr.response?.status || 'error'}, refreshing target token and retrying...`);
-                const newOauth2 = await refreshOauth2Token(targetApi.oauth1, targetApi.apiBase);
-                const docId = (await db.collection("users").where({ openid }).get()).data[0]._id;
-                await db.collection("users").doc(docId).update({ data: { [`${targetPlatform}.oauth2`]: newOauth2 } });
-                targetClient.defaults.headers.common["Authorization"] = `Bearer ${newOauth2.access_token}`;
-                await uploadGarminActivity(targetClient, fitFile.data, fitFile.path);
-              } else {
-                throw ulErr;
-              }
-            }
-          }
-
-          // 更新同步记录为成功
-          await db.collection("syncRecords").doc(recordRes._id).update({
-            data: { status: "success", updatedAt: new Date() },
-          });
-          result.success++;
-          actualNewActivityCount++;
-          console.log(`Sync success: ${activityName}`);
-        } catch (err) {
-          // Garmin 返回 409 表示活动已存在（重复），记为跳过而非失败
-          const isDuplicate409 = err.response?.status === 409 || (err.message && err.message.includes("status code 409"));
-          if (isDuplicate409) {
-            console.log(`活动 ${act.activityId} 已存在于目标平台，跳过`);
-            try {
-              const dupRecord = await db
-                .collection("syncRecords")
-                .where({ openid, activityId, direction, status: "syncing" })
-                .get();
-              if (dupRecord.data.length > 0) {
-                await db.collection("syncRecords").doc(dupRecord.data[0]._id).update({
-                  data: { status: "skipped", errorMsg: "活动已存在，跳过同步", updatedAt: new Date() },
-                });
-              }
-            } catch (e) {
-              console.error("更新跳过记录出错:", e);
-            }
-            result.skipped++;
-          } else {
-            console.error(`同步活动 ${act.activityId} 失败:`, err.message);
-            try {
-              const failRecord = await db
-                .collection("syncRecords")
-                .where({ openid, activityId, direction, status: "syncing" })
-                .get();
-              if (failRecord.data.length > 0) {
-                await db.collection("syncRecords").doc(failRecord.data[0]._id).update({
-                  data: { status: "failed", errorMsg: err.message, updatedAt: new Date() },
-                });
-              }
-            } catch (e) {
-              console.error("更新失败记录出错:", e);
-            }
-            result.failed++;
-            result.errors.push({ activityId, activityName, error: err.message });
           }
         }
 
-        await sleep(1000);
-      } else {
-        result.skipped++;
+        // 上传到目标平台
+        console.log(`Uploading #${actualNewActivityCount}: 【${activityName}】, 开始于 【${act.startTimeLocal}】, 活动ID: 【${activityId}】`);
+        if (targetIsCoros) {
+          // 上传到 COROS（非成功时 uploadToCoros 会抛出原始 message）
+          let corosResult;
+          try {
+            corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
+          } catch (ulErr) {
+            // token 失效（如 1019 Access token is invalid）则刷新 session 重试一次，仍失败则冒泡标 failed
+            if (isCorosTokenError(ulErr)) {
+              console.log(`COROS token invalid, refreshing session and retrying... error: ${ulErr.message}`);
+              corosSession = await getCorosSession(openid, true);
+              corosResult = await uploadToCoros(fitFile.data, fitFile.path, corosSession);
+            } else {
+              throw ulErr;
+            }
+          }
+          if (corosResult && corosResult.duplicate) {
+            // COROS 已有该活动，跳过但不算失败
+            await db.collection("syncRecords").doc(recordRes._id).update({
+              data: { status: "skipped", errorMsg: "COROS 已存在该活动", updatedAt: new Date() },
+            });
+            result.skipped++;
+            console.log(`Skipped (duplicate in COROS): ${activityName}`);
+            continue;
+          }
+          if (!corosResult || !corosResult.success) {
+            throw new Error(`COROS 导入未成功: ${JSON.stringify(corosResult)}`);
+          }
+        } else {
+          // 上传到 Garmin
+          let garminResult;
+          try {
+            garminResult = await uploadGarminActivity(targetClient, fitFile.data, fitFile.path);
+          } catch (ulErr) {
+            if (shouldRefreshToken(ulErr)) {
+              console.log(`Upload ${ulErr.response?.status || 'error'}, refreshing target token and retrying...`);
+              const newOauth2 = await refreshOauth2Token(targetApi.oauth1, targetApi.apiBase);
+              const docId = (await db.collection("users").where({ openid }).get()).data[0]._id;
+              await db.collection("users").doc(docId).update({ data: { [`${targetPlatform}.oauth2`]: newOauth2 } });
+              targetClient.defaults.headers.common["Authorization"] = `Bearer ${newOauth2.access_token}`;
+              garminResult = await uploadGarminActivity(targetClient, fitFile.data, fitFile.path);
+            } else {
+              throw ulErr;
+            }
+          }
+          // 佳明静默去重（HTTP 202 但 uploadId 为空）：视为已同步，记为跳过
+          if (garminResult && garminResult.duplicate) {
+            await db.collection("syncRecords").doc(recordRes._id).update({
+              data: { status: "skipped", errorMsg: "佳明已存在该活动", updatedAt: new Date() },
+            });
+            result.skipped++;
+            console.log(`Skipped (duplicate in Garmin): ${activityName}`);
+            continue;
+          }
+        }
+
+        // 更新同步记录为成功
+        await db.collection("syncRecords").doc(recordRes._id).update({
+          data: { status: "success", updatedAt: new Date() },
+        });
+        result.success++;
+        actualNewActivityCount++;
+        console.log(`Sync success: ${activityName}`);
+      } catch (err) {
+        // Garmin 返回 409 表示活动已存在（重复），记为跳过而非失败
+        const isDuplicate409 = err.response?.status === 409 || (err.message && err.message.includes("status code 409"));
+        if (isDuplicate409) {
+          console.log(`活动 ${act.activityId} 已存在于目标平台，跳过`);
+          try {
+            const dupRecord = await db
+              .collection("syncRecords")
+              .where({ openid, activityId, direction, status: "syncing" })
+              .get();
+            if (dupRecord.data.length > 0) {
+              await db.collection("syncRecords").doc(dupRecord.data[0]._id).update({
+                data: { status: "skipped", errorMsg: "活动已存在，跳过同步", updatedAt: new Date() },
+              });
+            }
+          } catch (e) {
+            console.error("更新跳过记录出错:", e);
+          }
+          result.skipped++;
+        } else {
+          console.error(`同步活动 ${act.activityId} 失败:`, err.message);
+          try {
+            const failRecord = await db
+              .collection("syncRecords")
+              .where({ openid, activityId, direction, status: "syncing" })
+              .get();
+            if (failRecord.data.length > 0) {
+              await db.collection("syncRecords").doc(failRecord.data[0]._id).update({
+                data: { status: "failed", errorMsg: err.message, updatedAt: new Date() },
+              });
+            }
+          } catch (e) {
+            console.error("更新失败记录出错:", e);
+          }
+          result.failed++;
+          result.errors.push({ activityId, activityName, error: err.message });
+        }
       }
+
+      await sleep(1000);
     }
 
-    // 更新用户最后同步时间
-    const updateData = {
-      lastSyncTime: new Date().toLocaleString("zh-CN"),
-      updatedAt: new Date(),
-    };
-
-    // 为 COROS 方向额外保存最后同步的活动时间（用于下次增量判断）
-    if (targetIsCoros && latestSourceActStartTime !== "0") {
-      updateData[`lastSyncedActTime_${direction}`] = latestSourceActStartTime;
-    }
-
-    await db.collection("users").where({ openid }).update({ data: updateData });
+    // 更新用户最后同步时间（仅用于首页展示，不再作为去重依据）
+    await db.collection("users").where({ openid }).update({
+      data: {
+        lastSyncTime: new Date().toLocaleString("zh-CN"),
+        updatedAt: new Date(),
+      },
+    });
 
     return { success: true, data: result };
   } catch (err) {
@@ -814,6 +839,14 @@ function decryptPassword(encrypted) {
  */
 function corosMd5Password(password) {
   return crypto.createHash("md5").update(password).digest("hex");
+}
+
+/**
+ * 判断错误是否为 COROS token 失效（如业务码 1019 "Access token is invalid"）
+ */
+function isCorosTokenError(err) {
+  const msg = (err.message || "").toLowerCase();
+  return msg.includes("token") && (msg.includes("invalid") || msg.includes("expired"));
 }
 
 /**
@@ -997,29 +1030,40 @@ async function uploadToCoros(fitData, filename, corosSession) {
 
   console.log("COROS import response:", JSON.stringify(importRes.data).substring(0, 500));
 
-  // 解析导入结果
+  // 解析导入结果（参考 garmin-sync-coros：成功必须 result==='0000'，data.status 仅服务端内部标记）
   const resData = importRes.data || {};
   const importData = resData.data || {};
-  const isSuccess = resData.result === "0000" || resData.apiCode === "8E16FCC7";
-  const hasError = importData.errorSize > 0;
-  const isDuplicate = resData.message && resData.message.includes("exist");
+  const importResult = resData.result;
+  const isSuccess = importResult === "0000" || resData.apiCode === "8E16FCC7";
+  const isDuplicate = (resData.message && resData.message.includes("exist")) || importResult === "1003";
 
+  // HTTP 层失败（网关/网络错误）直接抛出
+  if (importRes.status !== 200) {
+    throw new Error(`COROS 导入通知失败: HTTP ${importRes.status}`);
+  }
+
+  // 重复活动：视为跳过而非失败
   if (isDuplicate) {
     console.log("COROS import: activity already exists (duplicate, skipping)");
     return { success: false, duplicate: true };
-  } else if (isSuccess && !hasError) {
-    console.log("COROS import success");
-    return { success: true, duplicate: false };
-  } else if (isSuccess && hasError) {
+  }
+
+  // COROS 在 HTTP 200 的 body 里返回业务错误码（如 1019 Access token is invalid）。
+  // 必须抛出原始 message（保留 token/invalid 关键字），供 isCorosTokenError() 识别并触发刷新重试，
+  // 绝不能静默返回 success:false（否则错误信息被 JSON 包裹后无法判断 token 失效）
+  if (!isSuccess) {
+    const msg = resData.message || `result=${importResult}`;
+    throw new Error(`COROS 导入失败: ${msg}`);
+  }
+
+  if (importData.errorSize > 0) {
     // finishSize + errorSize: 部分成功或有重复
     console.log(`COROS import: finishSize=${importData.finishSize}, errorSize=${importData.errorSize} (可能有重复)`);
     return { success: true, duplicate: false, hasError: true, errorSize: importData.errorSize };
-  } else if (importRes.status !== 200) {
-    throw new Error(`COROS 导入通知失败: HTTP ${importRes.status}`);
-  } else {
-    console.log("COROS import: non-success response:", resData.result, resData.message || "");
-    return { success: false, duplicate: false };
   }
+
+  console.log("COROS import success");
+  return { success: true, duplicate: false };
 }
 
 /**

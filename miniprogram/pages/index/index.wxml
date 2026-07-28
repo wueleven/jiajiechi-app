@@ -5,7 +5,7 @@
     <view class="header-brand">
       <image class="header-logo" src="/images/logo.jpg" mode="aspectFit"></image>
       <view class="header-text">
-        <view class="header-title">佳捷同</view>
+        <view class="header-title">佳捷驰</view>
         <view class="header-desc">轻松同步你的佳明运动数据</view>
       </view>
     </view>
@@ -123,4 +123,7 @@
       </view>
     </view>
   </view>
+
+  <!-- 版本号（点击进入关于页） -->
+  <view class="version-footer" bindtap="goAbout">佳捷驰 {{appVersion}} · 关于</view>
 </view>

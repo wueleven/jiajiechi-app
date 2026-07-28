@@ -1,0 +1,102 @@
+/* pages/about/about.wxss */
+.page-container {
+  padding: 30rpx;
+  padding-bottom: 60rpx;
+}
+
+/* 应用信息 */
+.app-info {
+  text-align: center;
+  padding: 40rpx 0 32rpx;
+}
+
+.app-logo {
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: 36rpx;
+  margin-bottom: 20rpx;
+}
+
+.app-name {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.app-version {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.app-author {
+  font-size: 24rpx;
+  color: #aaa;
+  margin-top: 8rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.text {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.8;
+}
+
+/* 功能/隐私列表 */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.7;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #0052B9;
+  flex-shrink: 0;
+  margin-top: 16rpx;
+}
+
+/* 免责声明列表 */
+.legal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.legal-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #777;
+  line-height: 1.8;
+}
+
+.legal-num {
+  flex-shrink: 0;
+}
+
+.copyright {
+  text-align: center;
+  font-size: 22rpx;
+  color: #bbb;
+  padding: 32rpx 0 8rpx;
+  line-height: 1.6;
+}
