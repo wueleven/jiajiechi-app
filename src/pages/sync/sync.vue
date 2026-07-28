@@ -67,7 +67,7 @@
       </div>
       <label class="force-resync-row">
         <input type="checkbox" v-model="forceResync" />
-        <span class="force-resync-label">强制重新同步（忽略上次同步时间，重新拉取所有活动）</span>
+        <span class="force-resync-label">强制重新同步（忽略已同步记录，重新上传所有拉取到的活动）</span>
       </label>
       <button class="btn-sync" :class="{ disabled: syncing || syncPairs.length === 0 }"
         @click="startSync" :disabled="syncing || syncPairs.length === 0">

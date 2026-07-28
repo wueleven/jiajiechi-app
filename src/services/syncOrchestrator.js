@@ -6,7 +6,7 @@ import { getPlatformApi, fetchActivities, downloadGarminActivity, uploadGarminAc
 import { getCorosSession, isCorosTokenError } from './corosAuth.js'
 import { uploadToCoros, fetchCorosActivities, downloadCorosFit } from './corosSync.js'
 import { createSyncRecord, updateSyncRecord, findSyncRecord } from './syncRecord.js'
-import { updateLastSyncTime, getLastSyncedActTime, clearLastSyncedActTime } from './storage.js'
+import { updateLastSyncTime } from './storage.js'
 
 const DEFAULT_SYNC_NUM = 5
 const PAGE_SIZE = 20
@@ -60,20 +60,9 @@ export async function syncActivities(direction, forceResync = false, syncCount =
     // 2. 获取目标平台信息
     let targetApiBase, targetOauth2
     let corosSession = null
-    let latestTargetActStartTime = '0'
 
     if (targetIsCoros) {
       corosSession = await getCorosSession()
-      if (forceResync) {
-        clearLastSyncedActTime(direction)
-        latestTargetActStartTime = '0'
-      } else {
-        const lastTime = getLastSyncedActTime(direction)
-        if (lastTime) {
-          latestTargetActStartTime = lastTime
-          console.log(`Using per-direction lastSyncedActTime: ${lastTime}`)
-        }
-      }
     } else {
       const targetApi = await getPlatformApi(targetPlatform)
       if (targetApi.mfaRequired) {
@@ -133,45 +122,22 @@ export async function syncActivities(direction, forceResync = false, syncCount =
       }
     }
 
-    // 获取目标平台最新活动时间（仅用于佳明→佳明的时间对比；高驰→佳明不做跨平台时间对比）
-    if (!targetIsCoros && !sourceIsCoros && !forceResync) {
-      const targetActs = await fetchActivities(targetApiBase, targetOauth2, 0, 1)
-      latestTargetActStartTime = targetActs[0]?.startTimeLocal ?? '0'
-    }
-
     result.total = sourceActs.length
-    const latestSourceActStartTime = sourceActs[0]?.startTimeLocal ?? '0'
 
-    // 4. 检查是否有新活动（仅佳明→佳明方向）
-    if (!targetIsCoros && !sourceIsCoros && latestSourceActStartTime === latestTargetActStartTime) {
-      return { success: true, message: '没有要同步的活动', data: result }
-    }
-
-    // 5. 倒序同步（从最早的新活动开始）
+    // 4. 倒序同步（从最早的新活动开始）
     const reversedActs = [...sourceActs].reverse()
     let actualNewCount = 1
 
     for (const act of reversedActs) {
-      let shouldSync = false
-      if (targetIsCoros) {
-        if (!latestTargetActStartTime || act.startTimeLocal > latestTargetActStartTime) {
-          shouldSync = true
-        }
-      } else if (sourceIsCoros) {
-        // 参考 garmin-sync-coros：高驰→佳明不做跨平台时间对比（时区/格式不可靠），
-        // 用本地成功记录去重，佳明端 409 重复判定兜底
-        const synced = findSyncRecord({ activityId: String(act.activityId), direction, status: 'success' })
-        shouldSync = forceResync || !synced
-      } else {
-        if (act.startTimeLocal > latestTargetActStartTime) {
-          shouldSync = true
-        }
-      }
-
-      if (!shouldSync) { result.skipped++; continue }
-
       const activityName = act.activityName || '未知活动'
       const activityId = String(act.activityId)
+
+      // 统一去重策略（参考 garmin-sync-coros）：不做跨平台时间对比，
+      // 本地已有"成功"或"目标平台已存在(skipped)"记录即视为已同步；
+      // 目标平台自身的重复识别（佳明 409 / 高驰已存在）作为兜底
+      const synced = findSyncRecord({ activityId, direction, status: 'success' })
+        || findSyncRecord({ activityId, direction, status: 'skipped' })
+      if (!forceResync && synced) { result.skipped++; continue }
 
       try {
         // 创建同步记录
@@ -275,11 +241,8 @@ export async function syncActivities(direction, forceResync = false, syncCount =
       await new Promise(r => setTimeout(r, 1000))
     }
 
-    // 6. 更新同步时间
-    updateLastSyncTime(
-      targetIsCoros ? direction : null,
-      targetIsCoros ? latestSourceActStartTime : null
-    )
+    // 5. 更新最后同步时间（仅用于首页展示，不再作为去重依据）
+    updateLastSyncTime()
 
     return { success: true, data: result }
   } catch (err) {
