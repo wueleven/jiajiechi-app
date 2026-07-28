@@ -37,26 +37,6 @@ function getSsoUrls(region) {
   }
 }
 
-// ============ Cookie 会话管理 ============
-
-/**
- * 为 Garmin 域名设置 cookies
- */
-function setCookiesForDomain(domain, cookieStr) {
-  // 通过 http.js 的 cookieStore 管理
-  // 这里解析并存储
-  if (!cookieStr) return
-  cookieStr.split('; ').forEach(c => {
-    const nameValue = c.trim()
-    if (nameValue) {
-      const url = `https://sso.${domain}`
-      // 手动添加到 cookie store
-      const [name] = nameValue.split('=')
-      // 使用 http.js 的内部方法
-    }
-  })
-}
-
 // ============ 登录步骤 ============
 
 /**

@@ -144,7 +144,9 @@ export async function getCorosSession(forceRefresh = false) {
     throw new Error('COROS 未绑定')
   }
 
-  const sessionExpired = corosData.expiresAt && Date.now() >= corosData.expiresAt
+  // 提前 5 分钟视为过期并刷新，留出时钟误差/网络延迟余量，避免同步途中 token 刚好失效
+  const REFRESH_BUFFER_MS = 5 * 60 * 1000
+  const sessionExpired = corosData.expiresAt && Date.now() >= corosData.expiresAt - REFRESH_BUFFER_MS
   const userIdMissing = !corosData.userId
   const regionIdMissing = !corosData.regionId
 

@@ -10,6 +10,30 @@ import { updateLastSyncTime } from './storage.js'
 
 const DEFAULT_SYNC_NUM = 5
 const PAGE_SIZE = 20
+// "全部同步"分页抓取的安全上限，防止接口忽略分页参数时死循环
+const MAX_SYNC_PAGES = 200
+
+/**
+ * 逐页抓取全部活动（fetchAll 用）。pageIndex 从 0 开始，由调用方映射为各平台分页参数。
+ * 双重保险：① 按 activityId 去重，若某页无任何新活动则判定分页未推进并停止；② 硬性页数上限。
+ */
+async function collectAllPages(fetchPage) {
+  const acts = []
+  const seen = new Set()
+  for (let i = 0; i < MAX_SYNC_PAGES; i++) {
+    const batch = await fetchPage(i)
+    if (!batch || batch.length === 0) break
+    let added = 0
+    for (const a of batch) {
+      const id = String(a.activityId)
+      if (id && !seen.has(id)) { seen.add(id); acts.push(a); added++ }
+    }
+    // 本页无新活动 => 接口未按分页参数推进，停止避免死循环与重复
+    if (added === 0) break
+    if (batch.length < PAGE_SIZE) break
+  }
+  return acts
+}
 
 /**
  * 执行同步
@@ -101,50 +125,23 @@ export async function syncActivities(direction, forceResync = false, syncCount =
     let sourceActs = []
     if (sourceIsCoros) {
       try {
-        if (fetchAll) {
-          let page = 1
-          while (true) {
-            const batch = await fetchCorosActivities(sourceCorosSession, page, PAGE_SIZE)
-            if (!batch || batch.length === 0) break
-            sourceActs.push(...batch)
-            if (batch.length < PAGE_SIZE) break
-            page++
-          }
-        } else {
-          sourceActs = await fetchCorosActivities(sourceCorosSession, 1, limit)
-        }
+        sourceActs = fetchAll
+          ? await collectAllPages(i => fetchCorosActivities(sourceCorosSession, i + 1, PAGE_SIZE))
+          : await fetchCorosActivities(sourceCorosSession, 1, limit)
       } catch (actErr) {
         // COROS token 失效时强制刷新并重试
         if (isCorosTokenError(actErr)) {
           console.log('[sync] COROS token invalid, force refreshing session...')
           sourceCorosSession = await getCorosSession(true)
-          if (fetchAll) {
-            let page = 1
-            while (true) {
-              const batch = await fetchCorosActivities(sourceCorosSession, page, PAGE_SIZE)
-              if (!batch || batch.length === 0) break
-              sourceActs.push(...batch)
-              if (batch.length < PAGE_SIZE) break
-              page++
-            }
-          } else {
-            sourceActs = await fetchCorosActivities(sourceCorosSession, 1, limit)
-          }
+          sourceActs = fetchAll
+            ? await collectAllPages(i => fetchCorosActivities(sourceCorosSession, i + 1, PAGE_SIZE))
+            : await fetchCorosActivities(sourceCorosSession, 1, limit)
         } else throw actErr
       }
     } else {
-      if (fetchAll) {
-        let offset = 0
-        while (true) {
-          const batch = await fetchActivities(sourceApiBase, sourceOauth2, offset, PAGE_SIZE)
-          if (!batch || batch.length === 0) break
-          sourceActs.push(...batch)
-          if (batch.length < PAGE_SIZE) break
-          offset += PAGE_SIZE
-        }
-      } else {
-        sourceActs = await fetchActivities(sourceApiBase, sourceOauth2, 0, limit)
-      }
+      sourceActs = fetchAll
+        ? await collectAllPages(i => fetchActivities(sourceApiBase, sourceOauth2, i * PAGE_SIZE, PAGE_SIZE))
+        : await fetchActivities(sourceApiBase, sourceOauth2, 0, limit)
     }
 
     result.total = sourceActs.length

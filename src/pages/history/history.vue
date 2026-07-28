@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated } from 'vue'
+import { ref, onMounted, onActivated, onUnmounted } from 'vue'
 import { getRecords } from '../../services/syncRecord.js'
 
 const records = ref([])
@@ -107,20 +107,29 @@ function onPullDownRefresh() {
   loadRecords(true)
 }
 
-onMounted(() => loadRecords())
-onActivated(() => loadRecords(true))
-
 // 触底加载更多（Web 端用 scroll 事件）
-if (typeof window !== 'undefined') {
-  window.addEventListener('scroll', () => {
-    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
-    const scrollHeight = document.documentElement.scrollHeight
-    const clientHeight = document.documentElement.clientHeight
-    if (scrollHeight - scrollTop - clientHeight < 100 && hasMore.value && !loading.value) {
-      loadRecords()
-    }
-  })
+// 具名 handler，配合 onMounted/onUnmounted 绑定与移除，避免反复进出页面时监听器累积泄漏
+function onScroll() {
+  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
+  const scrollHeight = document.documentElement.scrollHeight
+  const clientHeight = document.documentElement.clientHeight
+  if (scrollHeight - scrollTop - clientHeight < 100 && hasMore.value && !loading.value) {
+    loadRecords()
+  }
 }
+
+onMounted(() => {
+  loadRecords()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('scroll', onScroll)
+  }
+})
+onActivated(() => loadRecords(true))
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('scroll', onScroll)
+  }
+})
 </script>
 
 <style scoped>

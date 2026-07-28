@@ -387,17 +387,41 @@ export async function downloadCorosFit(corosSession, activityId, sportType) {
   })
 
   const fileBuffer = fileRes.data
+  if (!fileBuffer || (fileBuffer.byteLength || 0) < 12) {
+    throw new Error(`COROS FIT 下载失败: 数据无效（${fileBuffer?.byteLength || 0} 字节）`)
+  }
   const byteArray = new Uint8Array(fileBuffer)
   console.log(`COROS FIT download: size=${byteArray.length} bytes`)
 
-  // 检查是否是 zip
+  // 检查是否是 zip（PK 头）
   if (byteArray[0] === 0x50 && byteArray[1] === 0x4b) {
-    const zip = await JSZip.loadAsync(fileBuffer)
-    const files = Object.keys(zip.files)
+    let zip
+    try {
+      zip = await JSZip.loadAsync(fileBuffer)
+    } catch (zipErr) {
+      throw new Error(`COROS zip 解析失败: ${zipErr.message}`)
+    }
+    const files = Object.keys(zip.files).filter(f => !zip.files[f].dir)
+    if (files.length === 0) throw new Error('COROS zip 为空（无有效记录）')
     const fitFile = files.find(f => f.endsWith('.fit')) || files[0]
     const fitData = await zip.files[fitFile].async('uint8array')
+    if (!fitData || fitData.length < 12) throw new Error('COROS zip 内 FIT 文件无效')
     // 参考 garmin-sync-coros：统一用 {activityId}.fit 命名（zip 内路径可能带文件夹，不适合作上传文件名）
     return { path: `${activityId}.fit`, data: fitData }
+  }
+
+  // 裸 FIT：优先认 FIT 头签名（偏移 8-11 为 ".FIT"）。
+  // 为不误伤合法数据，仅当内容明显是文本错误页（HTML/JSON，如 < { [ 开头）时才拦截；
+  // 其余未知二进制按原样透传，保持既有行为，避免影响正常同步
+  const hasFitSig = byteArray[8] === 0x2E && byteArray[9] === 0x46 && byteArray[10] === 0x49 && byteArray[11] === 0x54
+  if (!hasFitSig) {
+    const first = byteArray[0]
+    const looksLikeErrorPage = first === 0x3C || first === 0x7B || first === 0x5B // '<' '{' '['
+    const head = Array.from(byteArray.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ')
+    if (looksLikeErrorPage) {
+      throw new Error(`COROS FIT 下载失败: 返回内容疑似错误页而非 FIT（head=${head}）`)
+    }
+    console.warn(`[coros] downloadFit: 无 .FIT 签名且非 zip，按原样透传（head=${head}）`)
   }
 
   return { path: `${activityId}.fit`, data: byteArray }

@@ -338,17 +338,14 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
       data = new Uint8Array(data).buffer
       console.log(`[http] arraybuffer from Array: ${data.byteLength} bytes`)
     } else if (data && typeof data === 'object') {
-      // 其他对象格式，尝试提取数值
-      try {
-        const values = Object.values(data)
-        if (values.length > 0 && typeof values[0] === 'number') {
-          data = new Uint8Array(values).buffer
-          console.log(`[http] arraybuffer from Object values: ${data.byteLength} bytes`)
-        } else {
-          console.warn('[http] arraybuffer: object has non-numeric values, cannot convert')
-        }
-      } catch (e) {
-        console.warn('[http] arraybuffer: failed to convert object:', e.message)
+      // 其他对象格式（如 { "0": 80, "1": 75, ... } 字节映射），尝试提取数值
+      const values = Object.values(data)
+      if (values.length > 0 && values.every(v => typeof v === 'number')) {
+        data = new Uint8Array(values).buffer
+        console.log(`[http] arraybuffer from Object values: ${data.byteLength} bytes`)
+      } else {
+        // 无法转成二进制：明确报错，避免把损坏对象透传给下游当作 FIT/zip 误用
+        throw new Error('arraybuffer 响应无法解析为二进制（对象含非数值或为空）')
       }
     }
   } else if (responseType === 'json' && typeof data === 'string') {
