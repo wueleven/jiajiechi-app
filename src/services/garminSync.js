@@ -201,8 +201,21 @@ export async function uploadGarminActivity(apiBase, oauth2, fitData, filename) {
     })
 
     console.log('upload to garmin:', JSON.stringify(res.data).substring(0, 200))
-    return res.data
+    // 参考 garmin-sync-coros：佳明的重复活动有两种返回形态，
+    // 除 HTTP 409 外，还会返回 HTTP 202 但 detailedImportResult.uploadId 为空（静默去重）
+    const importResult = res.data?.detailedImportResult
+    const uploadId = importResult?.uploadId
+    if (importResult && (uploadId === null || uploadId === undefined || uploadId === '')) {
+      console.log('[garmin] upload judged duplicate: empty uploadId')
+      return { duplicate: true, data: res.data }
+    }
+    return { duplicate: false, data: res.data }
   } catch (err) {
+    // 409 = 佳明明确返回重复活动
+    if (err.status === 409) {
+      console.log('[garmin] upload duplicate: HTTP 409')
+      return { duplicate: true, data: err.response?.data }
+    }
     console.error('[garmin] upload failed:', err.message)
     if (err.response) {
       console.error('[garmin] upload response status:', err.status)

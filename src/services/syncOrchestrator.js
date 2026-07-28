@@ -72,6 +72,31 @@ export async function syncActivities(direction, forceResync = false, syncCount =
       targetOauth2 = targetApi.oauth2
     }
 
+    // 目标为高驰时预取其现有活动的开始时间（秒级时间戳）：
+    // 高驰导入接口异步处理，响应不返回重复信息，只能上传前主动对照判重
+    let corosExistingTimes = []
+    if (targetIsCoros) {
+      try {
+        let existing
+        try {
+          existing = await fetchCorosActivities(corosSession, 1, 200)
+        } catch (preErr) {
+          if (isCorosTokenError(preErr)) {
+            corosSession = await getCorosSession(true)
+            existing = await fetchCorosActivities(corosSession, 1, 200)
+          } else throw preErr
+        }
+        corosExistingTimes = (existing || [])
+          .map(a => a.corosRaw?.startTime)
+          .filter(t => typeof t === 'number')
+          .map(t => (t < 1e12 ? t : Math.floor(t / 1000)))
+        console.log(`[sync] 高驰已有活动预检: ${corosExistingTimes.length} 条`)
+      } catch (preErr) {
+        // 预检失败不阻塞同步，仅失去事前判重能力
+        console.warn('[sync] 高驰已有活动预检失败:', preErr.message)
+      }
+    }
+
     // 3. 拉取源平台活动
     let sourceActs = []
     if (sourceIsCoros) {
@@ -139,6 +164,21 @@ export async function syncActivities(direction, forceResync = false, syncCount =
         || findSyncRecord({ activityId, direction, status: 'skipped' })
       if (!forceResync && synced) { result.skipped++; continue }
 
+      // 高驰端已存在判重：用佳明 startTimeGMT（UTC）与高驰秒级时间戳对比，
+      // 绝对时间对绝对时间，不受时区影响；同一活动的 FIT 开始时间一致，留 60s 容差
+      if (targetIsCoros && corosExistingTimes.length > 0 && act.startTimeGMT) {
+        const gmtSec = Math.floor(Date.parse(act.startTimeGMT.replace(' ', 'T') + 'Z') / 1000)
+        if (gmtSec && corosExistingTimes.some(t => Math.abs(t - gmtSec) <= 60)) {
+          createSyncRecord({
+            direction, activityId, activityName,
+            activityTime: act.startTimeLocal || '',
+            status: 'skipped', errorMsg: '高驰已存在该活动',
+          })
+          result.skipped++
+          continue
+        }
+      }
+
       try {
         // 创建同步记录
         const record = createSyncRecord({
@@ -198,30 +238,22 @@ export async function syncActivities(direction, forceResync = false, syncCount =
           }
           // 成功计数统一在循环尾部处理，避免重复累加
         } else {
+          let garminResult
           try {
-            await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
+            garminResult = await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
           } catch (ulErr) {
-            // 409 = 佳明已存在该活动（重复），视为同步完成，跳过而不计为失败
-            if (ulErr?.status === 409) {
-              updateSyncRecord(record._id, { status: 'skipped', errorMsg: '佳明已存在该活动' })
-              result.skipped++
-              continue
-            }
             if (shouldRefreshToken(ulErr)) {
               const newOauth2 = await refreshTokenForPlatform(targetPlatform)
               if (newOauth2.mfaRequired) return { success: false, mfaRequired: true, ...newOauth2 }
               targetOauth2 = newOauth2
-              try {
-                await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
-              } catch (retryErr) {
-                if (retryErr?.status === 409) {
-                  updateSyncRecord(record._id, { status: 'skipped', errorMsg: '佳明已存在该活动' })
-                  result.skipped++
-                  continue
-                }
-                throw retryErr
-              }
+              garminResult = await uploadGarminActivity(targetApiBase, targetOauth2, fitFile.data, fitFile.path)
             } else throw ulErr
+          }
+          // 佳明判定重复（409 或 202 但 uploadId 为空）：视为已同步，记为跳过
+          if (garminResult?.duplicate) {
+            updateSyncRecord(record._id, { status: 'skipped', errorMsg: '佳明已存在该活动' })
+            result.skipped++
+            continue
           }
         }
 
