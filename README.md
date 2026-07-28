@@ -1,4 +1,4 @@
-# 佳捷驰（安卓 App / jjt-app）
+# 佳捷驰（安卓 App / jiajiechi-app）
 
 「佳捷驰」是一款把**运动手表数据**在不同平台之间互相同步的工具。本仓库是 **Android 原生 App 版本**（基于 Capacitor 8 打包，Web 前端跑在手机本地 WebView 里）。
 

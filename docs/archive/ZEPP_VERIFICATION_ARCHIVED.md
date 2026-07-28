@@ -42,7 +42,7 @@
 
 ### 接入步骤（拿到 APP_ID 后）
 
-1. 把官方 `oauth-Android-sdk` 的 `hmauth` SDK（jar/aar）接入 jjt-app。
+1. 把官方 `oauth-Android-sdk` 的 `hmauth` SDK（jar/aar）接入佳捷驰 App。
 2. 用 `OpenAuthorize` 拉起授权页：`new OpenAuthorize(ctx).setAppId(<我们的APP_ID>).secretEnable(false).setAuthCallback(...).startGetAccessToken(activity)`
 3. 回调里拿 `accessToken` / `refreshToken` / `region` / `expiresIn`，本地密文存储（与现有 Garmin/COROS 一致）。
 4. 用 `rest-api` 的数据接口（带 `Bearer access_token`）拉运动数据，接入 sync.vue 的同步方向选择。
