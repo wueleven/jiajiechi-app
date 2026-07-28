@@ -7,6 +7,7 @@ import IndexPage from './pages/index/index.vue'
 import BindPage from './pages/bind/bind.vue'
 import SyncPage from './pages/sync/sync.vue'
 import HistoryPage from './pages/history/history.vue'
+import AboutPage from './pages/about/about.vue'
 
 const routes = [
   { path: '/', redirect: '/index' },
@@ -14,6 +15,7 @@ const routes = [
   { path: '/sync', component: SyncPage, meta: { title: '同步', isTab: true } },
   { path: '/history', component: HistoryPage, meta: { title: '记录', isTab: true } },
   { path: '/bind', component: BindPage, meta: { title: '账号绑定' } },
+  { path: '/about', component: AboutPage, meta: { title: '关于佳捷驰' } },
 ]
 
 const router = createRouter({

@@ -99,16 +99,34 @@
         </svg>
       </div>
     </div>
+
+    <!-- 版本号（点击进入关于页） -->
+    <div class="version-info" @click="goAbout">关于佳捷驰 · 版本 v{{ appVersion }}</div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
+import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
 import { getBindInfo } from '../../services/storage.js'
 import logoImg from '../../assets/logo.jpg'
+import pkg from '../../../package.json'
 
 const router = useRouter()
+
+// 版本号：真机读安卓 versionName（与 APK 一致），网页环境回退到 package.json
+const appVersion = ref(pkg.version)
+async function loadAppVersion() {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    const info = await App.getInfo()
+    if (info?.version) appVersion.value = info.version
+  } catch (e) {
+    console.warn('读取版本号失败:', e)
+  }
+}
 
 const bindStatus = ref({
   garminCn: { bound: false, displayName: '' },
@@ -131,12 +149,13 @@ function loadBindInfo() {
   }
 }
 
-onMounted(loadBindInfo)
+onMounted(() => { loadBindInfo(); loadAppVersion() })
 onActivated(loadBindInfo)
 
 function goBind() { router.push('/bind') }
 function goSync() { router.push('/sync') }
 function goHistory() { router.push('/history') }
+function goAbout() { router.push('/about') }
 </script>
 
 <style scoped>
@@ -205,4 +224,9 @@ function goHistory() { router.push('/history') }
 .triangle-node.garmin-cn { background: #00a3d9; }
 .triangle-node.garmin-global { background: #0052B9; }
 .triangle-node.coros { background: #F40000; }
+
+.version-info {
+  text-align: center; font-size: 12px; color: #bbb;
+  padding: 12px 0 4px; cursor: pointer;
+}
 </style>
