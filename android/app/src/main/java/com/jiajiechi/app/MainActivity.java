@@ -1,4 +1,4 @@
-package com.jjt.app;
+package com.jiajiechi.app;
 
 import com.getcapacitor.BridgeActivity;
 
