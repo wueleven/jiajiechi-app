@@ -159,9 +159,23 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
       // FormData 上传时让 WebView 自动设置 multipart/form-data 的 boundary，
       // 因此移除调用方可能误设的 Content-Type
       const fetchHeaders = { ...headers }
+      let fetchBody = body
       if (body instanceof FormData) {
         delete fetchHeaders['Content-Type']
         delete fetchHeaders['content-type']
+      } else if (
+        body instanceof Uint8Array || body instanceof ArrayBuffer ||
+        (typeof Blob !== 'undefined' && body instanceof Blob && !(typeof File !== 'undefined' && body instanceof File))
+      ) {
+        // 关键：capacitor.config.json 开启 CapacitorHttp 后，真机上 window.fetch 被 Capacitor 劫持，
+        // 其桥接层 convertBody 对 Uint8Array/ArrayBuffer body 用 TextDecoder 按 UTF-8 解码，
+        // 任意二进制（如 zip）会被不可逆损坏，而 OSS v1 签名不校验文件内容仍返回 200，
+        // 导致“同步显示成功但高驰没数据”（网页正常、APK 失败的真正根因）。
+        // 桥接层只有 File 类型走 base64 无损通道（Java 侧 Base64.decode 还原原始字节），
+        // 所以这里把二进制 body 包装成 File 再交给 fetch
+        const ct = fetchHeaders['Content-Type'] || fetchHeaders['content-type'] || 'application/octet-stream'
+        fetchBody = new File([body], 'upload.bin', { type: ct })
+        console.log(`[http] binary body wrapped as File (${fetchBody.size} bytes, ${ct}) for lossless native upload`)
       }
 
       const controller = new AbortController()
@@ -170,7 +184,7 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
       const fetchRes = await fetch(url, {
         method: upperMethod,
         headers: fetchHeaders,
-        body: body && upperMethod !== 'GET' ? body : undefined,
+        body: fetchBody && upperMethod !== 'GET' ? fetchBody : undefined,
         redirect: followRedirect !== false ? 'follow' : 'manual',
         signal: controller.signal,
       })
