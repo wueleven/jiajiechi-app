@@ -202,6 +202,26 @@ export function findSyncRecord(query) {
   })
 }
 
+/**
+ * 获取上次同步选项（方向、数量、强制重同步）
+ */
+export function getLastSyncPrefs() {
+  const raw = localStorage.getItem('jjt_lastSyncPrefs')
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 保存上次同步选项
+ */
+export function saveLastSyncPrefs(prefs) {
+  localStorage.setItem('jjt_lastSyncPrefs', JSON.stringify(prefs))
+}
+
 // ============ 辅助 ============
 
 /**

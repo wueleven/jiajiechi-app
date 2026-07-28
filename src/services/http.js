@@ -150,7 +150,10 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
   const upperMethod = method.toUpperCase()
   // 二进制下载 或 带文件/表单的上传 优先使用 WebView fetch：
   // 避免 CapacitorHttp 桥接层把 FormData 里的二进制文件转成 JSON，导致 415 Unsupported Media Type
-  const useFetch = responseType === 'arraybuffer' || body instanceof FormData
+  // 同时避免把 Uint8Array/ArrayBuffer 二进制 body 转成 base64 文本，导致阿里云 OSS 收到损坏内容（网页成功、APK 失败的根因）
+  const useFetch = responseType === 'arraybuffer' || body instanceof FormData ||
+    body instanceof Uint8Array || body instanceof ArrayBuffer ||
+    (typeof Blob !== 'undefined' && body instanceof Blob)
   if (useFetch) {
     try {
       // FormData 上传时让 WebView 自动设置 multipart/form-data 的 boundary，

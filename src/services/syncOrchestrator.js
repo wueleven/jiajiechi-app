@@ -211,6 +211,10 @@ export async function syncActivities(direction, forceResync = false, syncCount =
               result.skipped++
               continue
             }
+            if (!corosResult?.success) {
+              // 显式判失败：uploadToCoros 返回 success:false 但未 throw 的情况（如 COROS 返回非 8E16FCC7/0000）
+              throw new Error(`COROS 导入未成功: ${JSON.stringify(corosResult)}`)
+            }
             updateSyncRecord(record._id, { status: 'success' })
             result.success++
             actualNewCount++
@@ -224,6 +228,9 @@ export async function syncActivities(direction, forceResync = false, syncCount =
                   updateSyncRecord(record._id, { status: 'skipped', errorMsg: 'COROS 已存在该活动' })
                   result.skipped++
                   continue
+                }
+                if (!retry?.success) {
+                  throw new Error(`COROS 导入重试未成功: ${JSON.stringify(retry)}`)
                 }
                 updateSyncRecord(record._id, { status: 'success' })
                 result.success++

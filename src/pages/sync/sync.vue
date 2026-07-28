@@ -132,6 +132,7 @@
 import { ref, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
+import { getLastSyncPrefs, saveLastSyncPrefs } from '../../services/storage.js'
 import { syncActivities } from '../../services/syncOrchestrator.js'
 import { submitMfa } from '../../services/garminAuth.js'
 
@@ -181,10 +182,22 @@ function buildSyncPairs() {
   available.forEach(p => { dirs[p.id] = pairDirections.value[p.id] || false })
 
   if (!available.find(p => p.id === selectedPairId.value)) {
-    selectedPairId.value = available.length > 0 ? available[0].id : ''
+    // 恢复上次选择的同步方向（若存在且当前仍可用）
+    const last = getLastSyncPrefs()
+    const restored = last && available.find(p => p.id === last.direction)
+    selectedPairId.value = restored ? restored.id : (available.length > 0 ? available[0].id : '')
   }
   syncPairs.value = available
   pairDirections.value = dirs
+}
+
+// 保存当前同步选项（方向/数量/强制重同步），供下次进入页面恢复
+function persistPrefs() {
+  saveLastSyncPrefs({
+    direction: selectedPairId.value,
+    syncCount: syncCount.value,
+    forceResync: forceResync.value,
+  })
 }
 
 function onPairSelect(id) { selectedPairId.value = id }
