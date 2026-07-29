@@ -338,7 +338,7 @@ onActivated(loadBindInfo)
 
 .pair-list { display: flex; flex-direction: column; gap: 8px; }
 .pair-card {
-  display: flex; align-items: center; padding: 14px 12px;
+  display: flex; align-items: center; padding: 20px 12px;
   border-radius: 12px; background: #f8f9fa; border: 2px solid transparent; cursor: pointer;
 }
 .pair-selected { background: #f0f5ff; border-color: #0052B9; }
@@ -417,7 +417,7 @@ onActivated(loadBindInfo)
   .section-title { margin-bottom: 8px; }
   .bind-status-bar { margin-bottom: 8px; }
   .pair-list { gap: 6px; }
-  .pair-card { padding: 10px 12px; }
+  .pair-card { padding: 15px 12px; }
   .sync-section { margin: 8px 0; }
   .sync-count-row, .toggle-row { margin-bottom: 6px; padding: 6px 12px; }
   .btn-sync { padding: 12px 0; }

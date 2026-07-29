@@ -145,22 +145,22 @@ function goHistory() { router.push('/history') }
 </script>
 
 <style scoped>
-.page-container { padding: 10px 16px; padding-bottom: 64px; }
+.page-container { padding: 8px 16px; padding-bottom: 62px; }
 
 /* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
-.card { padding: 12px 14px; margin-bottom: 8px; }
-.section-title { margin-bottom: 6px; }
+.card { padding: 11px 14px; margin-bottom: 6px; }
+.section-title { margin-bottom: 5px; }
 
 .header-section {
   background: linear-gradient(135deg, #0052B9, #0073e6);
   border-radius: 12px;
-  padding: 20px;
+  padding: 30px 20px;
   margin-bottom: 8px;
   color: #fff;
 }
 .header-brand { display: flex; align-items: center; gap: 14px; }
 .header-logo {
-  width: 48px; height: 48px; border-radius: 12px;
+  width: 52px; height: 52px; border-radius: 12px;
   object-fit: contain; flex-shrink: 0;
 }
 .header-title { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
@@ -203,8 +203,8 @@ function goHistory() { router.push('/history') }
 .action-name { font-size: 14px; color: #333; font-weight: 500; margin-bottom: 2px; }
 .action-desc { font-size: 12px; color: #999; }
 
-.sync-triangle { display: flex; justify-content: center; padding: 2px 0; }
-.triangle-svg { width: 100%; max-width: 200px; height: auto; }
+.sync-triangle { display: flex; justify-content: center; padding: 0; }
+.triangle-svg { width: 100%; max-width: 190px; height: auto; }
 .triangle-node {
   display: flex; align-items: center; justify-content: center;
   height: 36px; border-radius: 8px;
@@ -218,8 +218,8 @@ function goHistory() { router.push('/history') }
 /* 矮屏手机进一步收紧，确保整页一屏显示 */
 @media (max-height: 700px) {
   .page-container { padding-top: 6px; }
-  .header-section { padding: 14px 16px; margin-bottom: 6px; }
-  .header-logo { width: 44px; height: 44px; }
+  .header-section { padding: 22px 16px; margin-bottom: 6px; }
+  .header-logo { width: 46px; height: 46px; }
   .header-title { font-size: 18px; }
   .card { padding: 10px 12px; margin-bottom: 6px; }
   .section-title { margin-bottom: 4px; }
