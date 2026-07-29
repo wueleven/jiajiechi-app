@@ -260,25 +260,38 @@ async function nativeRequest(url, method, headers, body, responseType, timeout, 
   }
 
   let capResponse
-  try {
-    switch (upperMethod) {
-      case 'GET':
-        capResponse = await CapacitorHttp.get(requestData)
-        break
-      case 'POST':
-        capResponse = await CapacitorHttp.post(requestData)
-        break
-      case 'PUT':
-        capResponse = await CapacitorHttp.put(requestData)
-        break
-      case 'DELETE':
-        capResponse = await CapacitorHttp.delete(requestData)
-        break
-      default:
-        capResponse = await CapacitorHttp.request(requestData)
+
+  // DNS 解析失败发生在请求发出之前（未触达服务器），重试不会产生重复副作用；
+  // 批量同步时手机网络瞬时抖动偶发此错误，自动重试一次避免整条活动被标记失败
+  const isDnsFailure = (e) => /Unable to resolve host|No address associated|UnknownHostException/i.test(e?.message || String(e))
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      switch (upperMethod) {
+        case 'GET':
+          capResponse = await CapacitorHttp.get(requestData)
+          break
+        case 'POST':
+          capResponse = await CapacitorHttp.post(requestData)
+          break
+        case 'PUT':
+          capResponse = await CapacitorHttp.put(requestData)
+          break
+        case 'DELETE':
+          capResponse = await CapacitorHttp.delete(requestData)
+          break
+        default:
+          capResponse = await CapacitorHttp.request(requestData)
+      }
+      break
+    } catch (err) {
+      if (attempt < 1 && isDnsFailure(err)) {
+        console.warn(`[http] DNS 解析失败，1.5s 后重试: ${url}`)
+        await new Promise(r => setTimeout(r, 1500))
+        continue
+      }
+      throw new Error(`原生 HTTP 请求失败: ${err.message || err}`)
     }
-  } catch (err) {
-    throw new Error(`原生 HTTP 请求失败: ${err.message || err}`)
   }
 
   // 解析响应头中的 Set-Cookie

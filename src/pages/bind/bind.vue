@@ -32,7 +32,7 @@
     <div class="card">
       <div class="tip-title">使用说明</div>
       <div class="tip-item">1. 三个平台按需绑定，绑定任意两个及以上即可在它们之间同步数据</div>
-      <div class="tip-item">2. Garmin 国服 / 国际服使用账号密码登录，开启了两步验证的账号需输入验证码</div>
+      <div class="tip-item">2. Garmin 国服 / 国际服使用账号密码登录，开启了两步验证的账号需输入验证码；国服手机号登录需带 86 前缀，未填写时会自动补齐</div>
       <div class="tip-item">3. COROS 使用账号密码登录，账号可为注册邮箱或手机号</div>
       <div class="tip-item">4. 账号密码加密后仅保存在手机本地，用于登录官方服务器及登录状态过期后自动续期，不会上传</div>
       <div class="tip-item">5. 修改过平台密码或长期未使用导致同步失败时，重新绑定即可恢复</div>
@@ -110,9 +110,14 @@ const loginLoading = ref(false)
 const mfaLoading = ref(false)
 const toast = ref({ show: false, message: '' })
 
+let toastTimer = null
 function showToast(msg, duration = 2000) {
+  // 长消息（如带诊断信息的错误）延长展示时间，方便用户阅读和截图
+  if (msg && msg.length > 40) duration = Math.max(duration, 8000)
   toast.value = { show: true, message: msg }
-  setTimeout(() => { toast.value.show = false }, duration)
+  // 先取消上一条的关闭定时器，避免新提示被提前关掉
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value.show = false }, duration)
 }
 
 const platforms = computed(() => [
@@ -146,11 +151,17 @@ async function submitLogin() {
   }
   loginLoading.value = true
   try {
+    let account = username.value.trim()
+    // 佳明国服手机号登录必须带 86 前缀（实测）：识别到标准 11 位手机号时自动补齐，
+    // 邮箱含 @ 不会命中，已手动加 86 的也不会命中，不影响其他账号形式
+    if (currentPlatform.value === 'garminCn' && /^1[3-9]\d{9}$/.test(account)) {
+      account = '86' + account
+    }
     let res
     if (currentPlatform.value === 'coros') {
-      res = await corosBind(username.value.trim(), password.value.trim())
+      res = await corosBind(account, password.value.trim())
     } else {
-      res = await bindWithPassword(currentPlatform.value, username.value.trim(), password.value.trim())
+      res = await bindWithPassword(currentPlatform.value, account, password.value.trim())
     }
 
     if (res.success && res.mfaRequired) {

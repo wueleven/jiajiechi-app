@@ -47,19 +47,29 @@ export async function corosLogin(email, password) {
   }
 
   const data = loginRes.data || {}
-  const isSuccess = data.result === '0000' || data.apiCode === '41C2B95C' || data.code === 200
-
-  if (!isSuccess) {
-    throw new Error(`COROS 登录失败: ${data.message || data.msg || '未知错误'}`)
-  }
-
   const loginData = data.data || {}
   const accessToken = loginData.accessToken || data.accessToken || ''
   const userId = loginData.userId || data.userId || ''
   const regionId = loginData.regionId || data.regionId || 2
 
+  // 注意：apiCode 是接口标识符，成功/失败响应都带（实测密码错误也返回 apiCode=41C2B95C），
+  // 不能当成功标志；以是否拿到 accessToken 为准（与 running_page 等开源实现一致）
   if (!accessToken) {
-    throw new Error('COROS 登录成功但未找到 access token')
+    // 实测账号不存在/密码错误返回 result=1030
+    if (data.result === '1030') {
+      throw new Error('COROS 账号或密码错误')
+    }
+    if (data.message || data.msg) {
+      throw new Error(`COROS 登录失败: ${data.message || data.msg}`)
+    }
+    // 无服务器提示时把响应关键字段带出来便于定位，不含敏感信息
+    const summary = JSON.stringify({
+      result: data.result,
+      apiCode: data.apiCode,
+      code: data.code,
+      dataKeys: Object.keys(loginData),
+    })
+    throw new Error(`COROS 登录失败: 未找到 access token（响应: ${summary}）`)
   }
 
   const displayName = loginData.nickName || loginData.name || loginData.userName || email

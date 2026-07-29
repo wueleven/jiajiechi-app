@@ -182,11 +182,11 @@ const mfaCode = ref('')
 const toast = ref({ show: false, message: '' })
 
 let toastTimer = null
-function showToast(msg) {
+function showToast(msg, duration = 2500) {
   toast.value = { show: true, message: msg }
   // 先取消上一条的关闭定时器，避免新提示被提前关掉
   if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toast.value.show = false }, 2500)
+  toastTimer = setTimeout(() => { toast.value.show = false }, duration)
 }
 
 function loadBindInfo() {
@@ -269,7 +269,13 @@ async function startSync() {
         skipped: res.data?.skipped || 0,
       }
       showResult.value = true
-      showToast('同步完成')
+      // success 仅表示流程跑完，单条失败计在 failed 里，提示需区分失败场景
+      const failedCount = syncProgress.value.failed
+      if (failedCount > 0) {
+        showToast(`同步结束：${failedCount} 条失败，失败原因请查看记录页`, 4000)
+      } else {
+        showToast('同步完成')
+      }
     } else if (res.mfaRequired) {
       showMfaModal.value = true
       mfaPlatform.value = res.platform
