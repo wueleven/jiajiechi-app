@@ -67,7 +67,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
-import logoImg from '../../assets/logo.png'
+import logoImg from '../../assets/logo-display.png'
 import pkg from '../../../package.json'
 
 const router = useRouter()

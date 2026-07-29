@@ -109,7 +109,7 @@ import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
 import { autoSyncCompletedAt } from '../../services/autoSync.js'
 import AboutEntry from '../../components/AboutEntry.vue'
-import logoImg from '../../assets/logo.png'
+import logoImg from '../../assets/logo-display.png'
 
 const router = useRouter()
 
