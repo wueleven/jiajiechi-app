@@ -43,12 +43,17 @@
     </div>
 
     <div v-if="!hasMore && records.length > 0" class="no-more">没有更多记录了</div>
+
+    <!-- 关于入口 -->
+    <AboutEntry />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onActivated, onUnmounted } from 'vue'
 import { getRecords } from '../../services/syncRecord.js'
+import { autoSyncCompletedAt } from '../../services/autoSync.js'
+import AboutEntry from '../../components/AboutEntry.vue'
 
 const records = ref([])
 const loading = ref(false)
@@ -106,6 +111,9 @@ function formatDate(dateStr) {
 function onPullDownRefresh() {
   loadRecords(true)
 }
+
+// 自动同步完成后刷新记录列表（避免停留在本页时数据不更新）
+watch(autoSyncCompletedAt, () => loadRecords(true))
 
 // 触底加载更多（Web 端用 scroll 事件）
 // 具名 handler，配合 onMounted/onUnmounted 绑定与移除，避免反复进出页面时监听器累积泄漏

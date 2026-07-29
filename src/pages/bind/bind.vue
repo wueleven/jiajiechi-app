@@ -65,10 +65,10 @@
     <div class="modal-mask" v-if="showMfaModal" @click.self="closeMfaModal">
       <div class="modal-content">
         <div class="modal-title">输入验证码</div>
-        <div class="modal-desc">佳明账号已发送短信验证码，请输入收到的验证码</div>
+        <div class="modal-desc">Garmin登录验证码有效期30分钟，请及时输入。</div>
         <div class="input-group">
-          <div class="input-label">短信验证码</div>
-          <input class="modal-input" placeholder="请输入短信验证码" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" v-model="mfaCode" />
+          <div class="input-label">验证码</div>
+          <input class="modal-input" placeholder="请输入验证码" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" v-model="mfaCode" />
         </div>
         <div class="modal-actions">
           <div class="modal-btn cancel" @click="closeMfaModal">取消</div>

@@ -10,7 +10,7 @@
     <div class="app-info">
       <img class="app-logo" :src="logoImg" alt="佳捷驰" />
       <div class="app-name">佳捷驰</div>
-      <div class="app-version">版本 v{{ appVersion }}</div>
+      <div class="app-version">版本 {{ appVersion }}</div>
       <div class="app-author">作者：宵十一狼</div>
     </div>
 
@@ -73,8 +73,8 @@ import pkg from '../../../package.json'
 const router = useRouter()
 const year = new Date().getFullYear()
 
-// 版本号：真机读安卓 versionName（与 APK 一致），网页环境回退到 package.json
-const appVersion = ref(pkg.version)
+// 版本号：真机读安卓 versionName（已含 v 前缀，与 APK 一致），网页环境回退到 package.json 并补 v
+const appVersion = ref(`v${pkg.version}`)
 onMounted(async () => {
   if (!Capacitor.isNativePlatform()) return
   try {

@@ -65,9 +65,25 @@
           <option value="all">全部</option>
         </select>
       </div>
-      <label class="force-resync-row">
-        <input type="checkbox" v-model="forceResync" />
-        <span class="force-resync-label">强制重新同步（忽略已同步记录，重新上传所有拉取到的活动）</span>
+      <label class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">强制重新同步</span>
+          <span class="toggle-desc">忽略已同步记录，重新上传所有拉取到的活动</span>
+        </div>
+        <span class="toggle-switch">
+          <input type="checkbox" v-model="forceResync" />
+          <span class="toggle-slider"></span>
+        </span>
+      </label>
+      <label class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">启动 App 时自动同步</span>
+          <span class="toggle-desc">启动或离开超过 1 小时后打开 App，按当前方案自动同步（不强制重同步，“全部”按最近 50 条执行）</span>
+        </div>
+        <span class="toggle-switch">
+          <input type="checkbox" v-model="autoSyncOnLaunch" />
+          <span class="toggle-slider"></span>
+        </span>
       </label>
       <button class="btn-sync" :class="{ disabled: syncing || syncPairs.length === 0 }"
         @click="startSync" :disabled="syncing || syncPairs.length === 0">
@@ -99,6 +115,9 @@
       </div>
     </div>
 
+    <!-- 关于入口 -->
+    <AboutEntry />
+
     <!-- 同步中遮罩 -->
     <div class="syncing-overlay" v-if="syncing">
       <div class="syncing-content">
@@ -111,9 +130,9 @@
     <!-- MFA 验证码弹窗 -->
     <div class="mfa-overlay" v-if="showMfaModal">
       <div class="mfa-modal">
-        <div class="mfa-title">需要安全验证码</div>
+        <div class="mfa-title">输入验证码</div>
         <div class="mfa-desc">
-          {{ mfaPlatform === 'garminCn' ? '佳明国服' : '佳明国际服' }}账号需要验证身份，请输入邮箱收到的验证码
+          登录已过期，请重新输入验证码。
         </div>
         <input class="mfa-input" type="number" maxlength="6" placeholder="请输入验证码" v-model="mfaCode" />
         <div class="mfa-buttons">
@@ -135,6 +154,8 @@ import { getBindInfo } from '../../services/storage.js'
 import { getLastSyncPrefs, saveLastSyncPrefs } from '../../services/storage.js'
 import { syncActivities } from '../../services/syncOrchestrator.js'
 import { submitMfa } from '../../services/garminAuth.js'
+import { globalSyncing } from '../../services/autoSync.js'
+import AboutEntry from '../../components/AboutEntry.vue'
 
 const router = useRouter()
 
@@ -148,8 +169,10 @@ const bindStatus = ref({ garminCn: false, garminCom: false, coros: false })
 const syncPairs = ref([])
 const selectedPairId = ref('')
 const pairDirections = ref({})
-const syncing = ref(false)
+// 全局同步锁：与启动自动同步共用，互斥执行
+const syncing = globalSyncing
 const forceResync = ref(false)
+const autoSyncOnLaunch = ref(false)
 const syncCount = ref('5')
 const syncProgress = ref({ total: 0, success: 0, failed: 0, skipped: 0 })
 const showResult = ref(false)
@@ -158,9 +181,12 @@ const mfaPlatform = ref('')
 const mfaCode = ref('')
 const toast = ref({ show: false, message: '' })
 
+let toastTimer = null
 function showToast(msg) {
   toast.value = { show: true, message: msg }
-  setTimeout(() => { toast.value.show = false }, 2500)
+  // 先取消上一条的关闭定时器，避免新提示被提前关掉
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value.show = false }, 2500)
 }
 
 function loadBindInfo() {
@@ -203,14 +229,15 @@ function persistPrefs() {
     reversed: !!pairDirections.value[selectedPairId.value],
     syncCount: syncCount.value,
     forceResync: forceResync.value,
+    autoSyncOnLaunch: autoSyncOnLaunch.value,
   })
 }
 
 function onPairSelect(id) { selectedPairId.value = id; persistPrefs() }
 function onSwapDirection(id) { pairDirections.value[id] = !pairDirections.value[id]; persistPrefs() }
 
-// 数量/强制重同步变化时也自动记住
-watch([syncCount, forceResync], persistPrefs)
+// 数量/强制重同步/启动自动同步变化时也自动记住
+watch([syncCount, forceResync, autoSyncOnLaunch], persistPrefs)
 
 function getCurrentDirection() {
   const pair = syncPairs.value.find(p => p.id === selectedPairId.value)
@@ -225,6 +252,7 @@ function getCurrentDirection() {
 async function startSync() {
   const direction = getCurrentDirection()
   if (!direction) { showToast('请先选择同步方向'); return }
+  if (syncing.value) { showToast('正在同步中，请稍候'); return }
 
   syncing.value = true
   showResult.value = false
@@ -283,6 +311,7 @@ function restorePrefs() {
   if (!last) return
   if (last.syncCount) syncCount.value = String(last.syncCount)
   if (typeof last.forceResync === 'boolean') forceResync.value = last.forceResync
+  if (typeof last.autoSyncOnLaunch === 'boolean') autoSyncOnLaunch.value = last.autoSyncOnLaunch
 }
 
 onMounted(() => { restorePrefs(); loadBindInfo() })
@@ -349,13 +378,27 @@ onActivated(loadBindInfo)
   outline: none;
 }
 .sync-count-select:focus { border-color: #0052B9; }
-.force-resync-row {
-  display: flex; align-items: flex-start; gap: 8px;
-  font-size: 12px; color: #666; text-align: left;
-  margin-bottom: 12px; cursor: pointer;
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; background: #f8f9fa; border-radius: 10px;
+  margin-bottom: 12px; cursor: pointer; text-align: left;
 }
-.force-resync-row input { margin-top: 2px; cursor: pointer; }
-.force-resync-label { line-height: 1.5; }
+.toggle-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.toggle-title { font-size: 14px; color: #333; font-weight: 500; }
+.toggle-desc { font-size: 11px; color: #999; line-height: 1.5; }
+.toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: #d9d9d9; border-radius: 24px; transition: background 0.25s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute; width: 20px; height: 20px;
+  left: 2px; top: 2px; background: #fff; border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.25s;
+}
+.toggle-switch input:checked + .toggle-slider { background: #0052B9; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 .btn-sync {
   background: #0052B9; color: #fff; border-radius: 12px; padding: 14px 0;
   font-size: 16px; font-weight: 600; width: 100%; border: none; cursor: pointer;

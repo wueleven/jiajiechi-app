@@ -1,5 +1,10 @@
 <template>
   <div class="app-container">
+    <!-- 启动自动同步状态条 -->
+    <div class="auto-sync-bar" v-if="autoSyncRunning">
+      <span class="auto-sync-spinner"></span>
+      <span>自动同步中…</span>
+    </div>
     <div class="page-content">
       <router-view />
     </div>
@@ -15,12 +20,15 @@
         <span class="tab-label">{{ tab.label }}</span>
       </div>
     </nav>
+    <!-- 全局 Toast（自动同步结果提示） -->
+    <div class="global-toast" v-if="toast.show">{{ toast.message }}</div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { runAutoSyncOnLaunch, setupResumeAutoSync, autoSyncRunning } from './services/autoSync.js'
 import tabHome from './assets/icons/tab-home.png'
 import tabList from './assets/icons/tab-list.png'
 import tabSync from './assets/icons/tab-sync.png'
@@ -40,6 +48,43 @@ const showTabBar = computed(() => route.meta.isTab !== false && route.path !== '
 function switchTab(path) {
   router.push(path)
 }
+
+// ============ 启动自动同步 ============
+
+const toast = ref({ show: false, message: '' })
+
+let toastTimer = null
+function showToast(msg) {
+  toast.value = { show: true, message: msg }
+  // 先取消上一条的关闭定时器，避免新提示被提前关掉
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value.show = false }, 3000)
+}
+
+// 自动同步结果提示（冷启动与长后台恢复共用）
+function handleAutoSyncResult(res) {
+  if (!res) return // 开关未开启或条件不满足，静默跳过
+
+  if (res.success) {
+    const d = res.data || {}
+    // 有新活动同步成功或存在失败才提示，全部跳过保持静默
+    if ((d.success || 0) > 0 || (d.failed || 0) > 0) {
+      const failPart = d.failed ? ` · 失败 ${d.failed}` : ''
+      showToast(`自动同步完成：成功 ${d.success || 0} · 跳过 ${d.skipped || 0}${failPart}`)
+    }
+  } else if (res.mfaRequired) {
+    showToast('佳明需要验证码，请到同步页手动同步')
+  } else if (res.message) {
+    showToast(`自动同步失败：${res.message}`)
+  }
+}
+
+onMounted(async () => {
+  // 长后台（超过 1 小时）切回前台时再次自动同步
+  setupResumeAutoSync(handleAutoSyncResult)
+  // 冷启动自动同步
+  handleAutoSyncResult(await runAutoSyncOnLaunch())
+})
 </script>
 
 <style scoped>
@@ -109,5 +154,26 @@ function switchTab(path) {
 
 .tab-label {
   font-size: 11px;
+}
+
+.auto-sync-bar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0, 82, 185, 0.92); color: #fff;
+  padding: 6px 16px; border-radius: 20px; font-size: 12px;
+  z-index: 1500; box-shadow: 0 2px 8px rgba(0, 82, 185, 0.3);
+}
+.auto-sync-spinner {
+  width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff; border-radius: 50%;
+  animation: auto-sync-spin 1s linear infinite;
+}
+@keyframes auto-sync-spin { to { transform: rotate(360deg); } }
+
+.global-toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75); color: #fff; padding: 10px 24px;
+  border-radius: 8px; font-size: 14px; z-index: 2000;
+  max-width: 80%; text-align: center;
 }
 </style>
