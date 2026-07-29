@@ -31,6 +31,6 @@ function goAbout() { router.push('/about') }
 <style scoped>
 .version-info {
   text-align: center; font-size: 12px; color: #bbb;
-  padding: 12px 0 4px; cursor: pointer;
+  padding: 8px 0 2px; cursor: pointer;
 }
 </style>

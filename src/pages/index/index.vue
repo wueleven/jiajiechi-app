@@ -31,10 +31,8 @@
       </div>
     </div>
 
-    <!-- 快捷操作 -->
+    <!-- 快捷操作（标题省略，节省纵向空间） -->
     <div class="card">
-      <div class="section-title">快捷操作</div>
-
       <div class="action-item" @click="goSync">
         <div class="action-icon"><img src="../../assets/icons/tab-sync.png" alt="" /></div>
         <div class="action-text">
@@ -59,7 +57,7 @@
     <div class="card">
       <div class="section-title">支持的同步方向</div>
       <div class="sync-triangle">
-        <svg viewBox="0 0 300 220" class="triangle-svg">
+        <svg viewBox="0 0 300 150" class="triangle-svg">
           <defs>
             <marker id="arr-end" viewBox="0 0 10 10" refX="9" refY="5"
               markerWidth="6" markerHeight="6" orient="auto" fill="#0052B9">
@@ -72,28 +70,28 @@
           </defs>
 
           <!-- 双向连接线 -->
-          <line x1="150" y1="40" x2="70" y2="170"
+          <line x1="150" y1="36" x2="70" y2="120"
             stroke="#bbb" stroke-width="1.5"
             marker-start="url(#arr-start)" marker-end="url(#arr-end)"/>
-          <line x1="150" y1="40" x2="230" y2="170"
+          <line x1="150" y1="36" x2="230" y2="120"
             stroke="#bbb" stroke-width="1.5"
             marker-start="url(#arr-start)" marker-end="url(#arr-end)"/>
-          <line x1="70" y1="170" x2="230" y2="170"
+          <line x1="70" y1="120" x2="230" y2="120"
             stroke="#bbb" stroke-width="1.5"
             marker-start="url(#arr-start)" marker-end="url(#arr-end)"/>
 
           <!-- 节点: Garmin 国服 (顶部) -->
-          <foreignObject x="95" y="10" width="110" height="36">
+          <foreignObject x="95" y="6" width="110" height="36">
             <div xmlns="http://www.w3.org/1999/xhtml" class="triangle-node garmin-cn">Garmin 国服</div>
           </foreignObject>
 
           <!-- 节点: Garmin 国际服 (左下) -->
-          <foreignObject x="15" y="155" width="110" height="36">
+          <foreignObject x="15" y="105" width="110" height="36">
             <div xmlns="http://www.w3.org/1999/xhtml" class="triangle-node garmin-global">Garmin 国际服</div>
           </foreignObject>
 
           <!-- 节点: COROS 高驰 (右下) -->
-          <foreignObject x="175" y="155" width="110" height="36">
+          <foreignObject x="175" y="105" width="110" height="36">
             <div xmlns="http://www.w3.org/1999/xhtml" class="triangle-node coros">COROS 高驰</div>
           </foreignObject>
         </svg>
@@ -147,13 +145,17 @@ function goHistory() { router.push('/history') }
 </script>
 
 <style scoped>
-.page-container { padding: 12px 16px; padding-bottom: 70px; }
+.page-container { padding: 10px 16px; padding-bottom: 64px; }
+
+/* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
+.card { padding: 12px 14px; margin-bottom: 8px; }
+.section-title { margin-bottom: 6px; }
 
 .header-section {
   background: linear-gradient(135deg, #0052B9, #0073e6);
   border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 16px;
+  padding: 20px;
+  margin-bottom: 8px;
   color: #fff;
 }
 .header-brand { display: flex; align-items: center; gap: 14px; }
@@ -161,48 +163,48 @@ function goHistory() { router.push('/history') }
   width: 48px; height: 48px; border-radius: 12px;
   object-fit: contain; flex-shrink: 0;
 }
-.header-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.header-title { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
 .header-desc { font-size: 13px; opacity: 0.85; }
 
 .account-item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+  padding: 8px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;
 }
 .account-item:last-child { border-bottom: none; }
 .account-left { display: flex; align-items: center; flex: 1; }
 .account-icon {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 34px; height: 34px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: bold; color: #fff; margin-right: 14px;
+  font-size: 16px; font-weight: bold; color: #fff; margin-right: 12px;
 }
 .garmin-icon { background: #00a3d9; }
 .garmin-global-icon { background: #0052B9; }
 .coros-icon { background: #F40000; }
-.account-name { font-size: 14px; color: #333; margin-bottom: 4px; }
+.account-name { font-size: 14px; color: #333; margin-bottom: 2px; }
 .account-status { display: flex; align-items: center; gap: 8px; }
 .account-display { font-size: 12px; color: #999; }
 .arrow { color: #ccc; font-size: 20px; }
 
 .action-item {
-  display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+  display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;
 }
 .action-item:last-child { border-bottom: none; }
 .action-icon {
-  width: 40px; height: 40px; background: #f0f5ff; border-radius: 10px;
+  width: 34px; height: 34px; background: #f0f5ff; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; margin-right: 14px;
+  font-size: 20px; margin-right: 12px;
 }
 .action-icon img {
-  width: 22px; height: 22px; object-fit: contain;
+  width: 20px; height: 20px; object-fit: contain;
   /* 白底变透明，仅保留深蓝线条，融入浅蓝圆角盒 */
   mix-blend-mode: multiply;
 }
 .action-text { flex: 1; }
-.action-name { font-size: 14px; color: #333; font-weight: 500; margin-bottom: 3px; }
+.action-name { font-size: 14px; color: #333; font-weight: 500; margin-bottom: 2px; }
 .action-desc { font-size: 12px; color: #999; }
 
-.sync-triangle { display: flex; justify-content: center; padding: 8px 0; }
-.triangle-svg { width: 100%; max-width: 240px; height: auto; }
+.sync-triangle { display: flex; justify-content: center; padding: 2px 0; }
+.triangle-svg { width: 100%; max-width: 200px; height: auto; }
 .triangle-node {
   display: flex; align-items: center; justify-content: center;
   height: 36px; border-radius: 8px;
@@ -213,4 +215,16 @@ function goHistory() { router.push('/history') }
 .triangle-node.garmin-global { background: #0052B9; }
 .triangle-node.coros { background: #F40000; }
 
+/* 矮屏手机进一步收紧，确保整页一屏显示 */
+@media (max-height: 700px) {
+  .page-container { padding-top: 6px; }
+  .header-section { padding: 14px 16px; margin-bottom: 6px; }
+  .header-logo { width: 44px; height: 44px; }
+  .header-title { font-size: 18px; }
+  .card { padding: 10px 12px; margin-bottom: 6px; }
+  .section-title { margin-bottom: 4px; }
+  .account-item, .action-item { padding: 5px 0; }
+  .account-icon, .action-icon { width: 32px; height: 32px; }
+  .triangle-svg { max-width: 180px; }
+}
 </style>

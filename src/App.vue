@@ -98,7 +98,7 @@ onMounted(async () => {
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 60px;
+  /* 底部避让 tab 栏的留白由各页面 .page-container 自行负责，这里不再重复留白 */
 }
 
 .tab-bar {
