@@ -25,6 +25,7 @@
     <!-- 同步方向选择 -->
     <div class="card">
       <div class="section-title">选择同步方向</div>
+      <div class="section-subtitle" v-if="syncPairs.length > 0">点击箭头切换同步方向</div>
 
       <div v-if="syncPairs.length === 0" class="empty-direction">
         <div class="empty-text">暂无可用的同步方向</div>
@@ -333,6 +334,7 @@ onActivated(loadBindInfo)
 /* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
 .card { padding: 12px 14px; margin-bottom: 10px; }
 .section-title { margin-bottom: 10px; }
+.section-subtitle { font-size: 11px; color: #999; margin: -6px 0 10px; }
 
 .bind-status-bar { display: flex; gap: 6px; margin-bottom: 10px; }
 .bind-tag { flex: 1; min-width: 0; justify-content: center; display: flex; align-items: center; gap: 5px; padding: 5px 4px; border-radius: 20px; font-size: 11px; box-sizing: border-box; white-space: nowrap; }
