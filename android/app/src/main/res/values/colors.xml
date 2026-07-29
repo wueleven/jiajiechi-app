@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与网页端 body 背景 #f6f6f6 保持一致，用于状态栏/窗口背景 -->
+    <color name="pageBackground">#F6F6F6</color>
+</resources>
