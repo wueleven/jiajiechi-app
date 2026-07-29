@@ -145,7 +145,7 @@ function goHistory() { router.push('/history') }
 </script>
 
 <style scoped>
-.page-container { padding: 8px 16px; padding-bottom: 62px; }
+.page-container { padding: 8px 16px; padding-bottom: 56px; }
 
 /* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
 .card { padding: 11px 14px; margin-bottom: 6px; }
@@ -154,7 +154,7 @@ function goHistory() { router.push('/history') }
 .header-section {
   background: linear-gradient(135deg, #0052B9, #0073e6);
   border-radius: 12px;
-  padding: 30px 20px;
+  padding: 38px 20px;
   margin-bottom: 8px;
   color: #fff;
 }
@@ -218,7 +218,7 @@ function goHistory() { router.push('/history') }
 /* 矮屏手机进一步收紧，确保整页一屏显示 */
 @media (max-height: 700px) {
   .page-container { padding-top: 6px; }
-  .header-section { padding: 22px 16px; margin-bottom: 6px; }
+  .header-section { padding: 26px 16px; margin-bottom: 6px; }
   .header-logo { width: 46px; height: 46px; }
   .header-title { font-size: 18px; }
   .card { padding: 10px 12px; margin-bottom: 6px; }
