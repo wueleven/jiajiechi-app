@@ -56,7 +56,10 @@
     <!-- 同步按钮 -->
     <div class="sync-section">
       <div class="sync-count-row">
-        <span class="sync-count-label">同步数量</span>
+        <div class="toggle-info">
+          <span class="toggle-title">同步数量</span>
+          <span class="toggle-desc">“全部”为实验选项，可能出现不可预测的同步错误</span>
+        </div>
         <select class="sync-count-select" v-model="syncCount">
           <option value="1">最近 1 条</option>
           <option value="5">最近 5 条</option>
@@ -66,7 +69,6 @@
           <option value="all">全部</option>
         </select>
       </div>
-      <div class="sync-count-hint">“全部”为实验选项，可能出现不可预测的同步错误</div>
       <label class="toggle-row">
         <div class="toggle-info">
           <span class="toggle-title">强制重新同步</span>
@@ -381,17 +383,17 @@ onActivated(loadBindInfo)
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; margin-bottom: 8px;
   padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
+  text-align: left;
 }
 .sync-count-label { font-size: 14px; color: #333; font-weight: 500; }
 .sync-count-select {
-  flex: 1; max-width: 180px;
+  flex: 1; max-width: 140px; flex-shrink: 0;
   padding: 6px 10px; font-size: 14px;
   border: 1px solid #e0e0e0; border-radius: 6px;
   background: #fff; color: #333; cursor: pointer;
   outline: none;
 }
 .sync-count-select:focus { border-color: #0052B9; }
-.sync-count-hint { font-size: 11px; color: #999; margin: -2px 0 8px; padding: 0 12px; text-align: left; }
 .toggle-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
