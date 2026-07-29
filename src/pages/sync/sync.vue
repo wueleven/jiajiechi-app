@@ -66,6 +66,7 @@
           <option value="all">全部</option>
         </select>
       </div>
+      <div class="sync-count-hint">“全部”为实验选项，可能出现不可预测的同步错误</div>
       <label class="toggle-row">
         <div class="toggle-info">
           <span class="toggle-title">强制重新同步</span>
@@ -390,6 +391,7 @@ onActivated(loadBindInfo)
   outline: none;
 }
 .sync-count-select:focus { border-color: #0052B9; }
+.sync-count-hint { font-size: 11px; color: #999; margin: -2px 0 8px; padding: 0 12px; text-align: left; }
 .toggle-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
