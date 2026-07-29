@@ -216,9 +216,9 @@ export async function uploadGarminActivity(apiBase, oauth2, fitData, filename) {
       console.log('[garmin] upload duplicate: HTTP 409')
       return { duplicate: true, data: err.response?.data }
     }
-    // 412 = 前置条件不满足：新注册账号未在佳明官方 App 同意数据存储授权（实测开关路径见提示文案）
+    // 412 = 前置条件不满足：新注册账号未在 Garmin Connect APP 同意数据存储授权（实测开关路径见提示文案）
     if (err.status === 412) {
-      throw new Error('佳明拒收上传(412)：请在佳明官方App中同意数据存储授权后重试：设置 → 个人资料与隐私 → 数据 → 存储与处理，在页面底部点击同意', { cause: err })
+      throw new Error('佳明拒收上传(412)：新注册佳明账户请在 Garmin Connect APP 中同意数据存储授权后重试：设置 → 个人资料与隐私 → 数据 → 存储与处理，在页面底部点击同意', { cause: err })
     }
     console.error('[garmin] upload failed:', err.message)
     if (err.response) {
