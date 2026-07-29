@@ -11,8 +11,11 @@
       <img class="app-logo" :src="logoImg" alt="佳捷驰" />
       <div class="app-name">佳捷驰</div>
       <div class="app-version">版本 {{ appVersion }}</div>
-      <div class="app-author">作者：宵十一狼</div>
+      <div class="app-author" @click="onAuthorTap">作者：宵十一狼</div>
     </div>
+
+    <!-- Toast -->
+    <div class="toast" v-if="toast.show">{{ toast.message }}</div>
 
     <!-- 应用简介 -->
     <div class="card">
@@ -63,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
@@ -86,6 +89,34 @@ onMounted(async () => {
 })
 
 function goBack() { router.back() }
+
+// 彩蛋：连续快速点击作者名 7 次进入隐藏成就页，间隔超 800ms 重新计数
+const EGG_TAPS = 7
+let tapCount = 0
+let lastTapTime = 0
+
+const toast = ref({ show: false, message: '' })
+let toastTimer = null
+function showToast(msg, duration = 1500) {
+  toast.value = { show: true, message: msg }
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value.show = false }, duration)
+}
+onUnmounted(() => { if (toastTimer) clearTimeout(toastTimer) })
+
+function onAuthorTap() {
+  const now = Date.now()
+  tapCount = now - lastTapTime > 800 ? 1 : tapCount + 1
+  lastTapTime = now
+  if (tapCount >= EGG_TAPS) {
+    tapCount = 0
+    if (toastTimer) clearTimeout(toastTimer)
+    toast.value.show = false
+    router.push('/pb')
+  } else if (tapCount >= 3) {
+    showToast(`别，再点 ${EGG_TAPS - tapCount} 次就会出现那个了……`)
+  }
+}
 </script>
 
 <style scoped>
@@ -101,7 +132,7 @@ function goBack() { router.back() }
 }
 .app-name { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 4px; }
 .app-version { font-size: 13px; color: #999; }
-.app-author { font-size: 12px; color: #aaa; margin-top: 4px; }
+.app-author { font-size: 12px; color: #aaa; margin-top: 4px; user-select: none; -webkit-user-select: none; cursor: pointer; }
 
 .text { font-size: 13px; color: #555; line-height: 1.8; margin: 0; }
 
@@ -123,5 +154,11 @@ function goBack() { router.back() }
 .copyright {
   text-align: center; font-size: 11px; color: #bbb;
   padding: 16px 0 4px; line-height: 1.6;
+}
+
+.toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75); color: #fff; padding: 10px 24px;
+  border-radius: 8px; font-size: 14px; z-index: 2000;
 }
 </style>

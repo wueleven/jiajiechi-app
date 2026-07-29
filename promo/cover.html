@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>佳捷驰小红书封面</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #fff;
+  }
+  .cover {
+    width: 1242px; height: 1656px; overflow: hidden;
+    background: linear-gradient(165deg, #eaf3ff 0%, #ffffff 45%, #f0f7ff 100%);
+    position: relative;
+  }
+  /* 背景装饰 */
+  .bg-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .bg-circle {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,82,185,0.08), transparent 70%);
+  }
+  .bg-c1 { width: 700px; height: 700px; top: -220px; right: -200px; }
+  .bg-c2 { width: 600px; height: 600px; bottom: -150px; left: -220px;
+    background: radial-gradient(circle, rgba(0,163,217,0.10), transparent 70%); }
+  .hr-line { position: absolute; top: 700px; left: 0; width: 100%; opacity: 0.25; }
+
+  .content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding: 64px 80px 50px; }
+
+  /* 顶部 */
+  .top { display: flex; align-items: center; gap: 28px; }
+  .logo { width: 110px; height: 110px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,82,185,0.18); }
+  .app-name { font-size: 56px; font-weight: 800; color: #0B2B5B; letter-spacing: 4px; }
+  .beta-badge {
+    margin-left: auto; background: linear-gradient(135deg, #ff7a00, #ff9f2e);
+    color: #fff; font-size: 32px; font-weight: 700; padding: 14px 34px;
+    border-radius: 999px; box-shadow: 0 8px 22px rgba(255,122,0,0.35);
+  }
+
+  /* 大标题 */
+  .headline { margin-top: 36px; text-align: center; }
+  .headline .h1 {
+    font-size: 112px; font-weight: 900; color: #0B2B5B; letter-spacing: 5px; line-height: 1.15;
+  }
+  .headline .h1 .em {
+    background: linear-gradient(135deg, #0052B9, #00a3d9);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .headline .h2 {
+    margin-top: 16px; font-size: 52px; font-weight: 700; color: #33475f; letter-spacing: 3px;
+  }
+  .headline .h2 .free {
+    color: #ff7a00; font-weight: 900;
+  }
+
+  /* 三角互联图 */
+  .tri-wrap { margin-top: 34px; height: 560px; flex-shrink: 0; position: relative; }
+  .tri-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .node {
+    position: absolute; width: 300px; padding: 30px 10px 26px; border-radius: 28px;
+    background: #ffffff; box-shadow: 0 14px 40px rgba(11,43,91,0.14);
+    text-align: center;
+  }
+  .node .dot { width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 34px; font-weight: 800; }
+  .node .name { font-size: 36px; font-weight: 800; color: #0B2B5B; }
+  .node .sub { margin-top: 6px; font-size: 24px; color: #8595ab; }
+  .n-cn   { top: 0; left: 50%; transform: translateX(-50%); }
+  .n-cn .dot { background: #00a3d9; }
+  .n-gl   { bottom: 0; left: 30px; }
+  .n-gl .dot { background: #0052B9; }
+  .n-coros{ bottom: 0; right: 30px; }
+  .n-coros .dot { background: #F40000; }
+  .center-chip {
+    position: absolute; top: 300px; left: 50%; transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #0052B9, #0073e6);
+    color: #fff; font-size: 34px; font-weight: 800; letter-spacing: 2px;
+    padding: 20px 42px; border-radius: 999px; box-shadow: 0 12px 30px rgba(0,82,185,0.35);
+    white-space: nowrap;
+  }
+
+  /* Strava 联动横幅 */
+  .strava-band {
+    margin: 30px auto 0; width: fit-content; flex-shrink: 0;
+    display: flex; align-items: center; gap: 16px;
+    background: linear-gradient(135deg, #fc4c02, #ff7a1a);
+    color: #fff; font-size: 33px; font-weight: 800; letter-spacing: 1px;
+    padding: 20px 44px; border-radius: 999px;
+    box-shadow: 0 10px 28px rgba(252,76,2,0.30);
+    white-space: nowrap;
+  }
+  .strava-band .globe { font-size: 40px; }
+
+  /* 卖点 */
+  .points { margin-top: 32px; display: flex; gap: 24px; flex-shrink: 0; }
+  .pt {
+    flex: 1; background: rgba(255,255,255,0.85); border: 2px solid #e3edfa;
+    border-radius: 24px; padding: 30px 18px; text-align: center;
+  }
+  .pt .ic { font-size: 48px; }
+  .pt .t { margin-top: 12px; font-size: 30px; font-weight: 800; color: #0B2B5B; white-space: nowrap; }
+  .pt .d { margin-top: 8px; font-size: 24px; color: #64748b; white-space: nowrap; }
+
+  /* 底部 */
+  .bottom {
+    margin-top: 30px; display: flex; align-items: center; justify-content: center; gap: 20px;
+    font-size: 34px; color: #33475f; font-weight: 600;
+  }
+  .bottom .runner { font-size: 44px; }
+</style>
+</head>
+<body>
+<div class="cover" id="cover">
+  <div class="bg-deco">
+    <div class="bg-circle bg-c1"></div>
+    <div class="bg-circle bg-c2"></div>
+    <svg class="hr-line" viewBox="0 0 1242 120" fill="none">
+      <polyline points="0,60 180,60 240,20 300,100 360,40 420,80 480,60 1242,60"
+        stroke="#0052B9" stroke-width="3" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <div class="content">
+    <div class="top">
+      <img class="logo" src="../src/assets/logo-display.png" alt="logo">
+      <div class="app-name">佳捷驰</div>
+      <div class="beta-badge">公开测试中</div>
+    </div>
+
+    <div class="headline">
+      <div class="h1">跑者自研的<br><span class="em">运动数据同步</span>App</div>
+      <div class="h2"><span class="free">免费</span> · 开源 · 无服务器 · 隐私安全</div>
+    </div>
+
+    <div class="tri-wrap">
+      <svg class="tri-svg" viewBox="0 0 1082 560">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto" fill="#0052B9">
+            <path d="M1,1 L9,5 L1,9Z"/>
+          </marker>
+          <marker id="a2" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="5" markerHeight="5" orient="auto" fill="#0052B9">
+            <path d="M9,1 L1,5 L9,9Z"/>
+          </marker>
+        </defs>
+        <!-- 左边：国服 <-> 国际服 -->
+        <path d="M 388 175 Q 245 260 208 345" stroke="#0052B9" stroke-width="8" fill="none"
+          marker-start="url(#a2)" marker-end="url(#a1)" opacity="0.85"/>
+        <!-- 右边：国服 <-> 高驰 -->
+        <path d="M 694 175 Q 837 260 874 345" stroke="#0052B9" stroke-width="8" fill="none"
+          marker-start="url(#a2)" marker-end="url(#a1)" opacity="0.85"/>
+        <!-- 底边：国际服 <-> 高驰 -->
+        <path d="M 370 475 Q 541 525 712 475" stroke="#0052B9" stroke-width="8" fill="none"
+          marker-start="url(#a2)" marker-end="url(#a1)" opacity="0.85"/>
+      </svg>
+
+      <div class="node n-cn">
+        <div class="dot">G</div>
+        <div class="name">Garmin 国服</div>
+        <div class="sub">connect.garmin.cn</div>
+      </div>
+      <div class="node n-gl">
+        <div class="dot">G</div>
+        <div class="name">Garmin 国际服</div>
+        <div class="sub">connect.garmin.com</div>
+      </div>
+      <div class="node n-coros">
+        <div class="dot">C</div>
+        <div class="name">COROS 高驰</div>
+        <div class="sub">coros.com</div>
+      </div>
+      <div class="center-chip">双向同步 ⇄</div>
+    </div>
+
+    <div class="strava-band">
+      <span class="globe">🌍</span>
+      <span>同步至国际服 / 高驰，可自动流转 Strava 等海外平台</span>
+    </div>
+
+    <div class="points">
+      <div class="pt">
+        <div class="ic">📦</div>
+        <div class="t">FIT 原始文件</div>
+        <div class="d">心率·轨迹·功率不丢</div>
+      </div>
+      <div class="pt">
+        <div class="ic">🧹</div>
+        <div class="t">智能去重</div>
+        <div class="d">重复活动自动跳过</div>
+      </div>
+      <div class="pt">
+        <div class="ic">⚡</div>
+        <div class="t">启动自动同步</div>
+        <div class="d">打开App静默完成</div>
+      </div>
+      <div class="pt">
+        <div class="ic">🔒</div>
+        <div class="t">本地直连</div>
+        <div class="d">不设服务器 卸载即删</div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <span class="runner">🏃</span>
+      <span>跑团团友卷跑量神器 · 佳明天梯排名见 🏅</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
