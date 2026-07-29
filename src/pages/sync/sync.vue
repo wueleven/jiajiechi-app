@@ -78,7 +78,7 @@
       <label class="toggle-row">
         <div class="toggle-info">
           <span class="toggle-title">启动 App 时自动同步</span>
-          <span class="toggle-desc">启动或离开超过 1 小时后打开 App，按当前方案自动同步（不强制重同步，“全部”按最近 50 条执行）</span>
+          <span class="toggle-desc">不强制重同步，“全部”按最近 50 条执行</span>
         </div>
         <span class="toggle-switch">
           <input type="checkbox" v-model="autoSyncOnLaunch" />
@@ -319,12 +319,16 @@ onActivated(loadBindInfo)
 </script>
 
 <style scoped>
-.page-container { padding: 16px; padding-bottom: 70px; }
-.page-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.page-container { padding: 10px 16px; padding-bottom: 64px; }
+.page-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .back-btn { font-size: 28px; color: #0052B9; cursor: pointer; line-height: 1; }
 .page-title { font-size: 20px; font-weight: 600; color: #333; }
 
-.bind-status-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+/* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
+.card { padding: 12px 14px; margin-bottom: 10px; }
+.section-title { margin-bottom: 10px; }
+
+.bind-status-bar { display: flex; gap: 6px; margin-bottom: 10px; }
 .bind-tag { flex: 1; min-width: 0; justify-content: center; display: flex; align-items: center; gap: 5px; padding: 5px 4px; border-radius: 20px; font-size: 11px; box-sizing: border-box; white-space: nowrap; }
 .bind-ok { background: #f0fff4; color: #389e0d; }
 .bind-no { background: #f5f5f5; color: #999; }
@@ -332,9 +336,9 @@ onActivated(loadBindInfo)
 .dot-ok { background: #52c41a; }
 .dot-no { background: #ccc; }
 
-.pair-list { display: flex; flex-direction: column; gap: 10px; }
+.pair-list { display: flex; flex-direction: column; gap: 8px; }
 .pair-card {
-  display: flex; align-items: center; padding: 16px 14px;
+  display: flex; align-items: center; padding: 11px 12px;
   border-radius: 12px; background: #f8f9fa; border: 2px solid transparent; cursor: pointer;
 }
 .pair-selected { background: #f0f5ff; border-color: #0052B9; }
@@ -348,7 +352,7 @@ onActivated(loadBindInfo)
 .pair-content { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .platform-label { font-size: 13px; color: #333; font-weight: 500; white-space: nowrap; }
 .swap-btn {
-  width: 36px; height: 36px; border-radius: 50%; background: #e8edf5;
+  width: 32px; height: 32px; border-radius: 50%; background: #e8edf5;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .swap-active { background: #0052B9; }
@@ -363,11 +367,11 @@ onActivated(loadBindInfo)
   padding: 8px 24px; border-radius: 8px; font-size: 13px; cursor: pointer;
 }
 
-.sync-section { margin: 20px 0; text-align: center; }
+.sync-section { margin: 12px 0; text-align: center; }
 .sync-count-row {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 12px;
-  padding: 10px 14px; background: #f8f9fa; border-radius: 10px;
+  gap: 12px; margin-bottom: 8px;
+  padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
 }
 .sync-count-label { font-size: 14px; color: #333; font-weight: 500; }
 .sync-count-select {
@@ -380,8 +384,8 @@ onActivated(loadBindInfo)
 .sync-count-select:focus { border-color: #0052B9; }
 .toggle-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 10px 14px; background: #f8f9fa; border-radius: 10px;
-  margin-bottom: 12px; cursor: pointer; text-align: left;
+  padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
+  margin-bottom: 8px; cursor: pointer; text-align: left;
 }
 .toggle-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .toggle-title { font-size: 14px; color: #333; font-weight: 500; }
@@ -400,11 +404,24 @@ onActivated(loadBindInfo)
 .toggle-switch input:checked + .toggle-slider { background: #0052B9; }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 .btn-sync {
-  background: #0052B9; color: #fff; border-radius: 12px; padding: 14px 0;
+  background: #0052B9; color: #fff; border-radius: 12px; padding: 13px 0;
   font-size: 16px; font-weight: 600; width: 100%; border: none; cursor: pointer;
 }
 .btn-sync.disabled { background: #ccc; color: #999; }
-.sync-tip { font-size: 11px; color: #999; margin-top: 10px; }
+.sync-tip { font-size: 11px; color: #999; margin-top: 6px; }
+
+/* 矮屏手机进一步收紧，确保同步按钮不被挤出首屏 */
+@media (max-height: 700px) {
+  .page-container { padding-top: 6px; }
+  .card { padding: 10px 12px; margin-bottom: 8px; }
+  .section-title { margin-bottom: 8px; }
+  .bind-status-bar { margin-bottom: 8px; }
+  .pair-list { gap: 6px; }
+  .pair-card { padding: 8px 12px; }
+  .sync-section { margin: 8px 0; }
+  .sync-count-row, .toggle-row { margin-bottom: 6px; padding: 6px 12px; }
+  .btn-sync { padding: 12px 0; }
+}
 
 .result-card { margin-top: 16px; }
 .result-summary { display: flex; justify-content: space-around; padding: 12px 0; }
