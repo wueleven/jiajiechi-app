@@ -44,7 +44,7 @@
           <div class="pair-content">
             <span class="platform-label">{{ pairDirections[pair.id] ? pair.right.label : pair.left.label }}</span>
             <div class="swap-btn" :class="{ 'swap-active': selectedPairId === pair.id }" @click.stop="onSwapDirection(pair.id)">
-              <span class="swap-arrow">⇄</span>
+              <span class="swap-arrow">→</span>
             </div>
             <span class="platform-label">{{ pairDirections[pair.id] ? pair.left.label : pair.right.label }}</span>
           </div>
