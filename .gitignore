@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Android build outputs
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aar
+*.ap_
+*.dex
+*.class
+
+# Local config that leaks machine paths / keys
+android/local.properties
+*.keystore
+*.jks
+
+# Native IDE / OS files
+.DS_Store
+*.iml
+.idea/
+.vscode/
+
+# 前端构建产物（由 npm run build 生成，不入库）
+dist

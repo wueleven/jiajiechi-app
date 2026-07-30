@@ -1,0 +1,72 @@
+/* 全局样式 - 佳捷同 App */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #333;
+  background: #f6f6f6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  background: initial;
+  padding: 0;
+  margin: 0;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+button:focus { outline: 0; }
+button::after { border: none; }
+
+/* 通用卡片 */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+/* 主按钮 */
+.btn-primary {
+  background: #0052B9;
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  width: 100%;
+  transition: opacity 0.15s;
+}
+.btn-primary:active { opacity: 0.85; }
+.btn-primary.disabled { background: #ccc; color: #999; }
+
+/* 状态标签 */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-success { background: #e6f7e6; color: #52c41a; }
+.tag-warning { background: #fff7e6; color: #fa8c16; }
+.tag-error   { background: #fff1f0; color: #ff4d4f; }
+.tag-info    { background: #e6f0ff; color: #0052B9; }
+
+/* 通用 section-title */
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
