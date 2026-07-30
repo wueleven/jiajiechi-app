@@ -1,8 +1,7 @@
 <template>
   <div class="page-container">
-    <!-- 页面顶部：返回按钮 + 标题 -->
+    <!-- 页面顶部：标题（返回靠底部 tab 与手势，不再放返回按钮） -->
     <div class="page-header">
-      <span class="back-btn" @click="goBack">‹</span>
       <span class="page-title">同步活动</span>
     </div>
 
@@ -314,7 +313,6 @@ async function onMfaSubmit() {
 }
 
 function goBind() { router.push('/bind') }
-function goBack() { router.push('/index') }
 
 function restorePrefs() {
   const last = getLastSyncPrefs()
@@ -331,7 +329,6 @@ onActivated(loadBindInfo)
 <style scoped>
 .page-container { padding: 10px 16px; padding-bottom: 64px; }
 .page-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.back-btn { font-size: 28px; color: #0052B9; cursor: pointer; line-height: 1; }
 .page-title { font-size: 20px; font-weight: 600; color: #333; }
 
 /* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
