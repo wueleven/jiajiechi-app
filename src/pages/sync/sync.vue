@@ -1,10 +1,5 @@
 <template>
   <div class="page-container">
-    <!-- 页面顶部：标题（返回靠底部 tab 与手势，不再放返回按钮） -->
-    <div class="page-header">
-      <span class="page-title">同步活动</span>
-    </div>
-
     <!-- 账号绑定状态栏 -->
     <div class="bind-status-bar">
       <div class="bind-tag" :class="bindStatus.garminCn ? 'bind-ok' : 'bind-no'">
@@ -328,8 +323,6 @@ onActivated(loadBindInfo)
 
 <style scoped>
 .page-container { padding: 10px 16px; padding-bottom: 64px; }
-.page-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.page-title { font-size: 20px; font-weight: 600; color: #333; }
 
 /* 紧凑布局：收窄卡片与区块间距，让整页尽量一屏放下 */
 .card { padding: 12px 14px; margin-bottom: 10px; }
