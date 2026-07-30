@@ -375,7 +375,6 @@ onActivated(loadBindInfo)
   padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
   text-align: left;
 }
-.sync-count-label { font-size: 14px; color: #333; font-weight: 500; }
 .sync-count-select {
   flex: 1; max-width: 140px; flex-shrink: 0;
   padding: 6px 10px; font-size: 14px;
