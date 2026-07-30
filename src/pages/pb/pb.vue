@@ -3,7 +3,7 @@
     <!-- 页面顶部：返回按钮 + 标题 -->
     <div class="page-header">
       <span class="back-btn" @click="goBack">‹</span>
-      <span class="page-title">隐藏成就</span>
+      <span class="page-title">跑者勋章</span>
     </div>
 
     <!-- 彩蛋头部 -->
