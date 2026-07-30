@@ -87,16 +87,7 @@ cloudfunctions/     # 云函数（后端逻辑）
 
 - 本分支为历史归档，仅供参考、不再维护；代码中所含的均为平台公开常量（如 COROS 相关编号、OSS 桶名等），不含任何账号密钥。核心同步逻辑的可用实现见 [`main` 分支](../../tree/main)。
 
-## 参考与致谢
-
-本项目在开发过程中参考了两个优秀的开源项目，在此郑重感谢原作者们的无私分享。需要特别说明的是：**本项目为自行实现，但部分接口流程、参数结构与平台私有常量参考了下述项目（尤其是 COROS 侧的 STS 凭证、上传与导入流程），并非完全从零独立探索；源代码为各自用 JavaScript/TypeScript 重新编写，未直接复制其源文件。**
-
-- **garmin-sync-coros**（GitHub，by [@XiaoSiHwang](https://github.com/XiaoSiHwang)）：[github.com/XiaoSiHwang/garmin-sync-coros](https://github.com/XiaoSiHwang/garmin-sync-coros)
-  一个用 Python 实现「COROS 高驰 ↔ Garmin 佳明」数据互传的项目。本项目高驰侧的上传、导入流程，借鉴了它的实现思路。
-- **dailysync**（GitHub，by [@gooin](https://github.com/gooin)，采用 **GNU GPL v3** 许可证）：[github.com/gooin/dailysync-rev](https://github.com/gooin/dailysync-rev)
-  一个做「Garmin 国行 ↔ 国际服」同步的项目（TypeScript 实现）。本项目国服/国际服互传的处理方式，参考了它的逻辑。
-
-本项目同样以 **GNU GPL v3** 许可证开源（详见仓库根目录 `LICENSE` 文件）。再次感谢上述开源项目打下的基础。
+> 本项目参考的开源项目及完整致谢，见 [`main` 分支的 README](../../blob/main/README.md#参考与致谢)。
 
 ## 许可证
 
