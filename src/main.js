@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App.vue'
 import './assets/global.css'
 
@@ -28,4 +29,12 @@ const router = createRouter({
 
 const app = createApp(App)
 app.use(router)
-app.mount('#app')
+
+// 首页渲染完成后再隐藏原生启动屏，避免启动时白屏
+// （launchAutoHide 已设为 false，由这里手动关闭；web 端调用无副作用）
+router.isReady().then(() => {
+  app.mount('#app')
+  requestAnimationFrame(() => {
+    SplashScreen.hide({ fadeOutDuration: 200 }).catch(() => {})
+  })
+})

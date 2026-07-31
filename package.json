@@ -1,7 +1,7 @@
 {
   "name": "jiajiechi-app",
   "private": true,
-  "version": "0.9.7",
+  "version": "0.9.8-beta.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
     "@capacitor/android": "^8.4.2",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.4.2",
+    "@capacitor/splash-screen": "^8.0.2",
     "crypto-js": "^4.2.0",
     "jszip": "^3.10.1",
     "vue": "^3.4.38",

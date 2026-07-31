@@ -25,5 +25,9 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+ 系统启动屏：背景色与 splash 图留白色一致，
+             图标用 gen-splash.sh 生成的高清 splash_icon（ic_launcher_foreground 分辨率不够会发糊） -->
+        <item name="windowSplashScreenBackground">#FDFDFB</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
     </style>
 </resources>
