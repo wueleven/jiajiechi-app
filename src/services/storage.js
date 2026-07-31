@@ -125,6 +125,27 @@ export function clearMfaState(platform) {
 
 // ============ 同步记录 ============
 
+// 记录上限：最多保留 1000 条，且自动清除 3 个月前的旧记录，避免 localStorage 无限增长。
+// 旧活动去重有两层兜底（只拉最近 N 条 + 目标平台 409/已存在识别），裁剪旧记录不影响同步正确性
+const MAX_SYNC_RECORDS = 1000
+const SYNC_RECORD_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000
+
+/**
+ * 裁剪同步记录：先按时间淘汰，再按条数裁剪最旧的
+ */
+function pruneSyncRecords(records) {
+  const cutoff = Date.now() - SYNC_RECORD_MAX_AGE_MS
+  let pruned = records.filter(r => {
+    const t = new Date(r.createdAt).getTime()
+    return !(t < cutoff) // createdAt 缺失或异常的记录保留，不误删
+  })
+  if (pruned.length > MAX_SYNC_RECORDS) {
+    pruned.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    pruned = pruned.slice(pruned.length - MAX_SYNC_RECORDS)
+  }
+  return pruned
+}
+
 /**
  * 获取同步记录（分页）
  */
@@ -156,10 +177,18 @@ export function getAllSyncRecords() {
 }
 
 /**
- * 保存所有同步记录
+ * 保存所有同步记录（写入前自动裁剪，写入失败不抛异常，绝不中断同步流程）
  */
 function saveAllSyncRecords(records) {
-  localStorage.setItem(KEYS.SYNC_RECORDS, JSON.stringify(records))
+  const pruned = pruneSyncRecords(records)
+  try {
+    localStorage.setItem(KEYS.SYNC_RECORDS, JSON.stringify(pruned))
+  } catch (e) {
+    // 配额溢出兜底：只留最新 200 条重试，仍失败则放弃本次写入
+    try {
+      localStorage.setItem(KEYS.SYNC_RECORDS, JSON.stringify(pruned.slice(-200)))
+    } catch {}
+  }
 }
 
 /**
