@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 33+ 覆盖（整体替换 values/styles.xml 同名样式）：
+         windowSplashScreenBehavior=icon_preferred 强制系统启动屏始终显示图标。
+         Android 13+ 默认按启动路径决定是否显示图标（从通知/其他应用/部分厂商ROM启动会隐藏图标，只剩背景色 → 白屏无logo），
+         此属性强制始终显示，规避该问题。 -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">#FDFDFB</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
+    </style>
+</resources>
