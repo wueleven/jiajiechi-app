@@ -338,7 +338,7 @@ export async function fetchCorosActivities(corosSession, pageNo = 1, pageSize = 
 
   return dataList.map(act => ({
     activityId: String(act.labelId || act.activityId || act.id || ''),
-    activityName: act.label || act.activityName || act.sportName || '未知活动',
+    activityName: act.name || act.sportName || act.label || act.activityName || '未知活动',
     startTimeLocal: act.startTime ? formatCorosTime(act.startTime) : '',
     sportType: act.sportType || 0,
     corosRaw: act,
