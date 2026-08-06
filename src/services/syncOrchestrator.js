@@ -159,7 +159,15 @@ export async function syncActivities(direction, forceResync = false, syncCount =
       // 目标平台自身的重复识别（佳明 409 / 高驰已存在）作为兜底
       const synced = findSyncRecord({ activityId, direction, status: 'success' })
         || findSyncRecord({ activityId, direction, status: 'skipped' })
-      if (!forceResync && synced) { result.skipped++; continue }
+      if (!forceResync && synced) {
+        // 本地已有同步记录（成功/跳过）→ 本次标记为跳过，避免记录页残留上次的"成功"状态，
+        // 造成"本地有记录却显示同步成功"的误解（高驰→佳明方向曾出现）
+        if (synced.status !== 'skipped') {
+          updateSyncRecord(synced._id, { status: 'skipped', errorMsg: '本地已有同步记录' })
+        }
+        result.skipped++
+        continue
+      }
 
       // 高驰端已存在判重：用佳明 startTimeGMT（UTC）与高驰秒级时间戳对比，
       // 绝对时间对绝对时间，不受时区影响；同一活动的 FIT 开始时间一致，留 60s 容差

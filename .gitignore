@@ -25,3 +25,6 @@ android/local.properties
 # 前端构建产物（由 npm run build 生成，不入库）
 dist
 .vite/
+
+# 本地工作记忆/工具缓存（不入库）
+.workbuddy/
