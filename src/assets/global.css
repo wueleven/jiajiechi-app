@@ -70,3 +70,17 @@ button::after { border: none; }
   color: #333;
   margin-bottom: 12px;
 }
+
+/* 键盘弹出适配（配合 src/utils/keyboard.js）
+   body.kb-open 时 fixed 弹窗由垂直居中改为顶部对齐 + 限高可滚动，
+   保证输入框始终在键盘上方可见，不被顶起跳动 */
+body.kb-open .modal-mask,
+body.kb-open .mfa-overlay {
+  align-items: flex-start;
+  padding-top: 24px;
+}
+.modal-content,
+.mfa-modal {
+  max-height: calc(100vh - var(--kb-height, 0px) - 32px);
+  overflow-y: auto;
+}

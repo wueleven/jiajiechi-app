@@ -132,7 +132,8 @@
         <div class="mfa-desc">
           登录已过期，请重新输入验证码。
         </div>
-        <input class="mfa-input" type="number" maxlength="6" placeholder="请输入验证码" v-model="mfaCode" />
+        <input class="mfa-input" ref="mfaInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="请输入验证码" v-model="mfaCode"
+          autocapitalize="none" autocorrect="off" autocomplete="off" />
         <div class="mfa-buttons">
           <button class="mfa-btn mfa-cancel" @click="showMfaModal = false">取消</button>
           <button class="mfa-btn mfa-confirm" @click="onMfaSubmit">确认</button>
@@ -146,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onActivated } from 'vue'
+import { ref, watch, onMounted, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
 import { getLastSyncPrefs, saveLastSyncPrefs } from '../../services/storage.js'
@@ -177,7 +178,11 @@ const showResult = ref(false)
 const showMfaModal = ref(false)
 const mfaPlatform = ref('')
 const mfaCode = ref('')
+const mfaInput = ref(null)
 const toast = ref({ show: false, message: '' })
+
+// MFA 弹窗打开即聚焦验证码输入框
+watch(showMfaModal, (v) => { if (v) nextTick(() => mfaInput.value?.focus()) })
 
 let toastTimer = null
 function showToast(msg, duration = 2500) {

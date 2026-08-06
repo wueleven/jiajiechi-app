@@ -46,11 +46,16 @@
         <div class="modal-desc">请输入你的平台账号和密码</div>
         <div class="input-group">
           <div class="input-label">账号</div>
-          <input class="modal-input" :placeholder="currentPlatform === 'coros' ? '请输入邮箱或手机号' : '请输入账号/邮箱'" v-model="username" />
+          <input class="modal-input" ref="usernameInput" :placeholder="currentPlatform === 'coros' ? '请输入邮箱或手机号' : '请输入账号/邮箱'" v-model="username"
+            autocapitalize="none" autocorrect="off" autocomplete="off" />
         </div>
         <div class="input-group">
           <div class="input-label">密码</div>
-          <input class="modal-input" placeholder="请输入密码" type="password" v-model="password" />
+          <div class="pwd-wrap">
+            <input class="modal-input" ref="passwordInput" placeholder="请输入密码" :type="showPassword ? 'text' : 'password'" v-model="password"
+              autocapitalize="none" autocorrect="off" autocomplete="off" />
+            <span class="pwd-eye" @click="showPassword = !showPassword">{{ showPassword ? '隐藏' : '显示' }}</span>
+          </div>
         </div>
         <div class="modal-actions">
           <div class="modal-btn cancel" @click="closeBindModal">取消</div>
@@ -68,7 +73,8 @@
         <div class="modal-desc">Garmin登录验证码有效期30分钟，请及时输入。</div>
         <div class="input-group">
           <div class="input-label">验证码</div>
-          <input class="modal-input" placeholder="请输入验证码" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" v-model="mfaCode" />
+          <input class="modal-input" ref="mfaInput" placeholder="请输入验证码" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" v-model="mfaCode"
+            autocapitalize="none" autocorrect="off" autocomplete="off" />
         </div>
         <div class="modal-actions">
           <div class="modal-btn cancel" @click="closeMfaModal">取消</div>
@@ -85,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
 import { bindWithPassword, submitMfa, unbindPlatform } from '../../services/garminAuth.js'
@@ -106,9 +112,18 @@ const currentPlatformName = ref('')
 const username = ref('')
 const password = ref('')
 const mfaCode = ref('')
+const showPassword = ref(false)
 const loginLoading = ref(false)
 const mfaLoading = ref(false)
 const toast = ref({ show: false, message: '' })
+// 输入框模板引用（自动聚焦用）
+const usernameInput = ref(null)
+const passwordInput = ref(null)
+const mfaInput = ref(null)
+
+// 弹窗打开即聚焦首个输入框，缓解"点击激活/聚焦"分离导致的输入不畅
+watch(showBindModal, (v) => { if (v) nextTick(() => usernameInput.value?.focus()) })
+watch(showMfaModal, (v) => { if (v) nextTick(() => mfaInput.value?.focus()) })
 
 let toastTimer = null
 function showToast(msg, duration = 2000) {
@@ -270,9 +285,15 @@ function goBack() { router.push('/index') }
 .input-label { font-size: 13px; color: #666; margin-bottom: 6px; }
 .modal-input {
   width: 100%; border: 1px solid #e0e0e0; border-radius: 8px;
-  padding: 10px 14px; font-size: 14px; outline: none;
+  padding: 12px 14px; font-size: 14px; outline: none;
 }
 .modal-input:focus { border-color: #0052B9; }
+.pwd-wrap { position: relative; }
+.pwd-wrap .modal-input { padding-right: 64px; }
+.pwd-eye {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: #0052B9; cursor: pointer; padding: 8px 4px; user-select: none;
+}
 .modal-actions { display: flex; gap: 12px; margin-top: 8px; }
 .modal-btn {
   flex: 1; text-align: center; padding: 10px; border-radius: 8px;

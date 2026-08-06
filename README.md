@@ -34,18 +34,20 @@
 | 高驰 → 国行/国际服 | 把高驰手表记录同步到 Garmin |
 | 国行/国际服 → 高驰 | 把 Garmin 记录同步到高驰 |
 
+此外，打开 App 或从后台回到前台时会自动同步最近的运动记录（数量与开关可在同步页设置），省去手动点同步的步骤。
+
 ## 技术架构
 
 - **前端**：Vue 3 + Vue Router + Vite（写界面和逻辑）
 - **壳**：Capacitor 8 把它打包成安卓 App，运行在手机本地，不依赖服务器
 - **网络请求**：自己封装的 `http.js`，在手机本地发请求，对接各家运动平台接口
-- **加密与压缩**：`crypto-js`（Garmin 老接口需要 OAuth1 签名）；`jszip` / `pako`（处理活动文件的压缩包）
+- **加密与压缩**：`crypto-js`（Garmin 老接口需要 OAuth1 签名）；`jszip`（处理活动文件的压缩包）
 
 代码位置：
 
 ```
 src/
-  pages/          # 五个页面：首页(index)、账号绑定(bind)、同步(sync)、记录(history)、关于(about)
+  pages/          # 页面：首页(index)、账号绑定(bind)、同步(sync)、记录(history)、关于(about)
   services/
     garminAuth.js / garminSync.js   # Garmin 登录与上传下载
     corosAuth.js / corosSync.js     # 高驰登录与上传下载
@@ -53,6 +55,11 @@ src/
     syncOrchestrator.js  # 同步总调度（决定谁同步给谁、去重、重试）
     syncRecord.js  # 同步记录（App 内"记录"页的数据）
     storage.js     # 本地存储（账号、token 等）
+    autoSync.js    # 打开 App / 回到前台时自动同步
+  utils/
+    crypto.js      # 加密与签名辅助
+    oauth1.js      # Garmin OAuth1 签名
+    keyboard.js    # 键盘弹出时的弹窗适配（输入框不被遮挡）
 ```
 
 ## 本地构建与运行（给开发者）

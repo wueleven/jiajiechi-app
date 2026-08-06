@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App.vue'
 import './assets/global.css'
+import { setupKeyboardHandler } from './utils/keyboard.js'
 
 import IndexPage from './pages/index/index.vue'
 import BindPage from './pages/bind/bind.vue'
@@ -29,6 +30,9 @@ const router = createRouter({
 
 const app = createApp(App)
 app.use(router)
+
+// 全局键盘适配：键盘弹出时调整 fixed 弹窗布局（依赖 Manifest 的 adjustResize）
+setupKeyboardHandler()
 
 // 首页渲染完成后再隐藏原生启动屏，避免启动时白屏
 // （launchAutoHide 已设为 false，由这里手动关闭；web 端调用无副作用）
