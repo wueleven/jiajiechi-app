@@ -29,6 +29,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { runAutoSyncOnLaunch, setupResumeAutoSync, autoSyncRunning } from './services/autoSync.js'
+import { setupBackButtonHandler } from './utils/backButton.js'
 import tabHome from './assets/icons/tab-home.png'
 import tabList from './assets/icons/tab-list.png'
 import tabSync from './assets/icons/tab-sync.png'
@@ -80,6 +81,12 @@ function handleAutoSyncResult(res) {
 }
 
 onMounted(async () => {
+  // 全局返回键/手势：非首页后退，首页"再按一次退出"（防误退）
+  setupBackButtonHandler({
+    router,
+    onExitHint: () => showToast('再按一次返回键退出应用'),
+  })
+
   // 长后台（超过 1 小时）切回前台时再次自动同步
   setupResumeAutoSync(handleAutoSyncResult)
   // 冷启动自动同步

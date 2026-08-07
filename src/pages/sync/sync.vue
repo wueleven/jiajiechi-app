@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onActivated, nextTick } from 'vue'
+import { ref, watch, onMounted, onActivated, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
 import { getLastSyncPrefs, saveLastSyncPrefs } from '../../services/storage.js'
@@ -155,6 +155,7 @@ import { syncActivities } from '../../services/syncOrchestrator.js'
 import { submitMfa } from '../../services/garminAuth.js'
 import { globalSyncing } from '../../services/autoSync.js'
 import AboutEntry from '../../components/AboutEntry.vue'
+import { registerBackInterceptor } from '../../utils/backButton.js'
 
 const router = useRouter()
 
@@ -324,6 +325,13 @@ function restorePrefs() {
 
 onMounted(() => { restorePrefs(); loadBindInfo() })
 onActivated(loadBindInfo)
+
+// MFA 验证码弹窗打开时，系统返回键/手势优先关闭弹窗
+const unregisterBackInterceptor = registerBackInterceptor(() => {
+  if (showMfaModal.value) { showMfaModal.value = false; return true }
+  return false
+})
+onUnmounted(unregisterBackInterceptor)
 </script>
 
 <style scoped>

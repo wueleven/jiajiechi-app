@@ -91,11 +91,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBindInfo } from '../../services/storage.js'
 import { bindWithPassword, submitMfa, unbindPlatform } from '../../services/garminAuth.js'
 import { corosBind, corosUnbind } from '../../services/corosAuth.js'
+import { registerBackInterceptor } from '../../utils/backButton.js'
 
 const router = useRouter()
 
@@ -147,6 +148,14 @@ function loadBindInfo() {
 }
 
 onMounted(loadBindInfo)
+
+// 弹窗打开时，系统返回键/手势优先关闭弹窗（MFA 在上层，先关）
+const unregisterBackInterceptor = registerBackInterceptor(() => {
+  if (showMfaModal.value) { closeMfaModal(); return true }
+  if (showBindModal.value) { closeBindModal(); return true }
+  return false
+})
+onUnmounted(unregisterBackInterceptor)
 
 function openBindModal(p) {
   currentPlatform.value = p.key
