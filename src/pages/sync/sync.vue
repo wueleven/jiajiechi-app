@@ -217,8 +217,15 @@ function buildSyncPairs() {
     const lastPairId = last?.pairId || last?.direction
     const restored = lastPairId && available.find(p => p.id === lastPairId)
     selectedPairId.value = restored ? restored.id : (available.length > 0 ? available[0].id : '')
-    // 恢复上次的箭头方向（是否反向）
-    if (restored && typeof last.reversed === 'boolean') {
+    // 恢复所有配对的箭头方向
+    if (last?.allDirections) {
+      available.forEach(p => {
+        if (typeof last.allDirections[p.id] === 'boolean') {
+          dirs[p.id] = last.allDirections[p.id]
+        }
+      })
+    } else if (restored && typeof last.reversed === 'boolean') {
+      // 旧版存储仅记录当前配对方向，回退兼容
       dirs[restored.id] = last.reversed
     }
   }
@@ -231,6 +238,7 @@ function persistPrefs() {
   saveLastSyncPrefs({
     pairId: selectedPairId.value,
     reversed: !!pairDirections.value[selectedPairId.value],
+    allDirections: { ...pairDirections.value },
     syncCount: syncCount.value,
     forceResync: forceResync.value,
     autoSyncOnLaunch: autoSyncOnLaunch.value,
