@@ -17,14 +17,20 @@
             <span class="record-label">活动时间</span>
             <span class="record-value">{{ record.activityTime || '-' }}</span>
           </div>
+          <!-- 有距离的运动（跑步/游泳/徒步等）才显示距离，力量训练等无距离运动不展示 -->
+          <div v-if="hasDistance(record)" class="record-row">
+            <span class="record-label">运动距离</span>
+            <span class="record-value">{{ formatDistance(record.distance) }}</span>
+          </div>
           <div class="record-row">
             <span class="record-label">同步时间</span>
             <span class="record-value">{{ formatDate(record.createdAt) }}</span>
           </div>
         </div>
 
-        <div v-if="record.status === 'failed' && record.errorMsg" class="record-error">
-          <span class="error-text">失败原因: {{ record.errorMsg }}</span>
+        <div v-if="record.errorMsg" class="record-error"
+             :class="record.status === 'failed' ? 'error-failed' : 'error-skipped'">
+          <span class="error-text">{{ record.status === 'failed' ? '失败原因' : '跳过原因' }}: {{ record.errorMsg }}</span>
         </div>
       </div>
     </div>
@@ -107,6 +113,19 @@ function formatDate(dateStr) {
   } catch { return dateStr }
 }
 
+// 是否有有效距离（兼容旧记录无 distance 字段、力量训练等 distance 为 0/空 的情况）
+function hasDistance(record) {
+  const d = Number(record.distance)
+  return isFinite(d) && d > 0
+}
+
+// 距离格式化：米 -> 公里/米
+function formatDistance(distance) {
+  const meters = Number(distance)
+  if (!isFinite(meters) || meters <= 0) return ''
+  return meters >= 1000 ? `${(meters / 1000).toFixed(2)} 公里` : `${Math.round(meters)} 米`
+}
+
 // 下拉刷新模拟
 function onPullDownRefresh() {
   loadRecords(true)
@@ -159,9 +178,13 @@ onUnmounted(() => {
 .record-value { font-size: 12px; color: #666; }
 
 .record-error {
-  margin-top: 10px; padding: 10px 12px; background: #fff1f0; border-radius: 6px;
+  margin-top: 10px; padding: 10px 12px; border-radius: 6px;
 }
-.error-text { font-size: 11px; color: #ff4d4f; }
+.error-failed { background: #fff1f0; }
+.error-failed .error-text { color: #ff4d4f; }
+.error-skipped { background: #fffbe6; }
+.error-skipped .error-text { color: #b8860b; }
+.error-text { font-size: 11px; }
 
 .empty-state {
   display: flex; flex-direction: column; align-items: center; padding: 80px 0;

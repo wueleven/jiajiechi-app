@@ -177,6 +177,7 @@ export async function syncActivities(direction, forceResync = false, syncCount =
           createSyncRecord({
             direction, activityId, activityName,
             activityTime: act.startTimeLocal || '',
+            distance: act.distance,
             status: 'skipped', errorMsg: '高驰已存在该活动',
           })
           result.skipped++
@@ -185,10 +186,11 @@ export async function syncActivities(direction, forceResync = false, syncCount =
       }
 
       try {
-        // 创建同步记录
+        // 创建同步记录（distance 单位米，无距离的运动如力量训练可为空）
         const record = createSyncRecord({
           direction, activityId, activityName,
           activityTime: act.startTimeLocal || '',
+          distance: act.distance,
           status: 'syncing',
         })
 

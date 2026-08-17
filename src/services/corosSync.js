@@ -341,6 +341,8 @@ export async function fetchCorosActivities(corosSession, pageNo = 1, pageSize = 
     activityName: act.name || act.sportName || act.label || act.activityName || '未知活动',
     startTimeLocal: act.startTime ? formatCorosTime(act.startTime) : '',
     sportType: act.sportType || 0,
+    // 活动距离（米），力量训练等无距离运动可能缺失或为 0
+    distance: act.distance,
     corosRaw: act,
   }))
 }
