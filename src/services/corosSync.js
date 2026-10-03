@@ -10,9 +10,9 @@ import JSZip from 'jszip'
 
 // COROS 区域配置
 const COROS_REGION_CONFIG = {
-  1: { teamapi: 'https://teamapi.coros.com',    bucket: 'coros-s3',  service: 'aws',    s3Endpoint: 'https://s3.us-east-1.amazonaws.com' },
-  2: { teamapi: 'https://teamcnapi.coros.com',  bucket: 'coros-oss',  service: 'aliyun', s3Endpoint: 'https://oss-cn-beijing.aliyuncs.com' },
-  3: { teamapi: 'https://teameuapi.coros.com',  bucket: 'eu-coros',   service: 'aws',    s3Endpoint: 'https://s3.eu-central-1.amazonaws.com' },
+  1: { teamapi: 'https://teamapi.coros.com',    bucket: 'coros-s3',  service: 'aws',    s3Endpoint: 'https://s3.us-east-1.amazonaws.com', stsProxy: 'https://training.coros.com' },
+  2: { teamapi: 'https://teamcnapi.coros.com',  bucket: 'coros-oss',  service: 'aliyun', s3Endpoint: 'https://oss-cn-beijing.aliyuncs.com', stsProxy: 'https://trainingcn.coros.com' },
+  3: { teamapi: 'https://teameuapi.coros.com',  bucket: 'eu-coros',   service: 'aws',    s3Endpoint: 'https://s3.eu-central-1.amazonaws.com', stsProxy: 'https://training.coros.com' },
 }
 
 const COROS_FAQ_API = 'https://faq.coros.com'
@@ -38,30 +38,16 @@ export async function uploadToCoros(fitData, filename, corosSession) {
   const stsSign = COROS_STS_SIGN[regionId] || COROS_STS_SIGN[2]
 
   // 1. 获取 STS 临时凭证（按区域使用不同的 bucket/service/sign）
-  const stsQuery = qsStringify({
-    bucket: regionCfg.bucket,
-    service: regionCfg.service,
-    v: 2,
-    app_id: COROS_APP_ID,
-    sign: stsSign,
-  })
-  const stsRes = await httpRequest(`${COROS_FAQ_API}/openapi/oss/sts?${stsQuery}`, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    responseType: 'json',
-    validateStatus: false,
-  })
-
-  if (stsRes.status !== 200 || !stsRes.data?.data?.credentials) {
-    throw new Error(`获取 COROS STS 凭证失败: HTTP ${stsRes.status}`)
-  }
-
+  // 2026-10-03 起 COROS 关闭了免登录通道（旧 /openapi/oss/sts 对三个区域 bucket 均返回
+  // HTTP 200 + body code 403 "sts for this bucket is only available via the v2 channel"）。
+  // 网页版训练中心改用其自家 BFF 代理 /api/proxy/oss/sts（Cookie: CPL-coros-token 鉴权），
+  // 该 token 与登录返回的 accessToken 是同一个凭证，故 app 用登录 token 走代理取凭证。
+  const stsCred = await fetchCorosSTS(regionCfg, stsSign, corosSession.accessToken)
   // STS 凭证是 base64 + salt 编码的
-  const rawCredentials = stsRes.data.data.credentials
-  const stripped = rawCredentials.replace(COROS_S3_SALT, '')
+  const stripped = stsCred.credentials.replace(COROS_S3_SALT, '')
   const bucketData = JSON.parse(atob(stripped))
 
-  console.log(`COROS STS obtained: region=${regionId}, bucket=${regionCfg.bucket}`)
+  console.log(`COROS STS obtained: channel=${stsCred.channel}, region=${regionId}, bucket=${regionCfg.bucket}`)
 
   // 2. 计算 FIT 文件 MD5，打包成 ZIP
   const fitBlob = new Blob([fitArray])
@@ -142,6 +128,63 @@ export async function uploadToCoros(fitData, filename, corosSession) {
   }
 
   return { success: true, duplicate: false }
+}
+
+/**
+ * 获取 COROS STS 临时上传凭证
+ * 通道优先级：
+ * 1. web-proxy：训练中心网页版同款 BFF（{stsProxy}/api/proxy/oss/sts），
+ *    用登录 accessToken 作为 CPL-coros-token cookie 鉴权；401 视为 token 失效
+ * 2. v2/legacy：faq.coros.com 开放接口（v2 鉴权参数未知、legacy 已被服务端关闭），保留作回退
+ * 任一通道拿到 data.credentials 即成功。
+ * @returns {{ credentials: string, channel: string }}
+ */
+async function fetchCorosSTS(regionCfg, stsSign, accessToken) {
+  const attempts = []
+  let v2AuthFailed = false
+
+  const baseQuery = { bucket: regionCfg.bucket, service: regionCfg.service, v: 2 }
+  const signedQuery = { ...baseQuery, app_id: COROS_APP_ID, sign: stsSign }
+
+  const stsCalls = [
+    {
+      channel: 'web-proxy',
+      url: `${regionCfg.stsProxy || 'https://trainingcn.coros.com'}/api/proxy/oss/sts?${qsStringify(baseQuery)}`,
+      headers: accessToken ? { Cookie: `CPL-coros-token=${accessToken}` } : null,
+      authRequired: true,
+    },
+    { channel: 'v2', url: `${COROS_FAQ_API}/openapi/v2/oss/sts?${qsStringify(baseQuery)}`, headers: accessToken ? { accesstoken: accessToken } : null },
+    { channel: 'v2+sign', url: `${COROS_FAQ_API}/openapi/v2/oss/sts?${qsStringify(signedQuery)}`, headers: accessToken ? { accesstoken: accessToken } : null },
+    { channel: 'legacy', url: `${COROS_FAQ_API}/openapi/oss/sts?${qsStringify(signedQuery)}`, headers: null },
+  ]
+
+  for (const call of stsCalls) {
+    if (call.headers === null && call.authRequired) continue // 无 token 时跳过需要鉴权的通道
+    const res = await httpRequest(call.url, {
+      method: 'GET',
+      headers: { Accept: 'application/json', ...(call.headers || {}) },
+      responseType: 'json',
+      validateStatus: false,
+    })
+    const body = res.data || {}
+    const credentials = body.data?.credentials
+    if (res.status === 200 && credentials) {
+      return { credentials, channel: call.channel }
+    }
+    const bodyMsg = body.msg || body.errorCode || body.error || ''
+    attempts.push(`${call.channel}: HTTP ${res.status}${bodyMsg ? ` ${bodyMsg}` : ''}`)
+    // 鉴权失败（401 / AUTH_INVALID）：token 可能失效，标记后走刷新重试
+    if (call.headers && (res.status === 401 || body.errorCode === 'AUTH_INVALID' || body.code === 401)) {
+      v2AuthFailed = true
+    }
+  }
+
+  const detail = attempts.join(' | ')
+  if (v2AuthFailed) {
+    // message 含 token + invalid 关键字，供 isCorosTokenError() 识别并触发 getCorosSession(true) 刷新重试
+    throw new Error(`获取 COROS STS 凭证失败: accesstoken invalid (${detail})`)
+  }
+  throw new Error(`获取 COROS STS 凭证失败: ${detail}`)
 }
 
 // ============ S3/OSS 上传（纯 JS 实现） ============
