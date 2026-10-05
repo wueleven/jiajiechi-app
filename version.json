@@ -1,0 +1,9 @@
+{
+  "versionName": "v0.9.8-beta.5",
+  "versionCode": 53,
+  "notes": "关于页新增检查更新，国内网络也可用；下载入口提供蒲公英与 GitHub 两个通道。更新后无需重新绑定账号。",
+  "downloadUrls": [
+    { "label": "从蒲公英下载", "url": "https://www.pgyer.com/jiajiechi" },
+    { "label": "从 GitHub 下载", "url": "https://github.com/wueleven/jiajiechi-app/releases/tag/v0.9.8-beta.5" }
+  ]
+}
