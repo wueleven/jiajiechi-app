@@ -11,7 +11,35 @@
       <img class="app-logo" :src="logoImg" alt="佳捷驰" />
       <div class="app-name">佳捷驰</div>
       <div class="app-version">版本 {{ appVersion }}</div>
+      <div class="update-row">
+        <button class="update-btn" :disabled="checking" @click="onCheckUpdate">
+          {{ checking ? '检查中…' : '检查更新' }}
+        </button>
+      </div>
       <div class="app-author" @click="onAuthorTap">作者：宵十一狼</div>
+    </div>
+
+    <!-- 检查更新结果弹窗 -->
+    <div class="modal-mask" v-if="updateModal.show" @click.self="updateModal.show = false">
+      <div class="modal">
+        <div class="modal-title">{{ updateModal.hasUpdate ? `发现新版本 ${updateModal.versionName}` : (updateModal.error ? '检查更新失败' : '已是最新版本') }}</div>
+        <div class="modal-body" v-if="updateModal.hasUpdate">
+          <p class="modal-notes" v-if="updateModal.notes">{{ updateModal.notes }}</p>
+          <p class="modal-hint">更新后无需重新绑定账号</p>
+        </div>
+        <div class="modal-body" v-else-if="updateModal.error">
+          <p class="modal-notes">{{ updateModal.error }}</p>
+        </div>
+        <div class="modal-actions">
+          <button
+            v-for="dl in updateModal.downloadUrls"
+            :key="dl.url"
+            class="modal-btn primary"
+            @click="openDownload(dl.url)"
+          >{{ dl.label || '去下载' }}</button>
+          <button class="modal-btn" @click="updateModal.show = false">关闭</button>
+        </div>
+      </div>
     </div>
 
     <!-- Toast -->
@@ -70,6 +98,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
+import { checkForUpdate } from '../../services/updateCheck.js'
 import logoImg from '../../assets/logo-display.png'
 import pkg from '../../../package.json'
 
@@ -78,15 +107,50 @@ const year = new Date().getFullYear()
 
 // 版本号：真机读安卓 versionName（已含 v 前缀，与 APK 一致），网页环境回退到 package.json 并补 v
 const appVersion = ref(`v${pkg.version}`)
+const appBuild = ref(0) // 安卓 versionCode，用于与 version.json 的 versionCode 比较
 onMounted(async () => {
   if (!Capacitor.isNativePlatform()) return
   try {
     const info = await App.getInfo()
     if (info?.version) appVersion.value = info.version
+    if (info?.build) appBuild.value = Number(info.build) || 0
   } catch (e) {
     console.warn('读取版本号失败:', e)
   }
 })
+
+// ===== 检查更新 =====
+const checking = ref(false)
+const updateModal = ref({ show: false, hasUpdate: false, versionName: '', notes: '', downloadUrls: [], error: '' })
+
+async function onCheckUpdate() {
+  if (checking.value) return
+  checking.value = true
+  updateModal.value = { show: false, hasUpdate: false, versionName: '', notes: '', downloadUrls: [], error: '' }
+  try {
+    const { hasUpdate, latest } = await checkForUpdate({ versionName: appVersion.value, versionCode: appBuild.value })
+    if (hasUpdate) {
+      updateModal.value = {
+        show: true,
+        hasUpdate: true,
+        versionName: latest.versionName,
+        notes: latest.notes,
+        downloadUrls: latest.downloadUrls || [],
+        error: '',
+      }
+    } else {
+      updateModal.value = { show: true, hasUpdate: false, versionName: '', notes: '', downloadUrls: [], error: '' }
+    }
+  } catch (e) {
+    updateModal.value = { show: true, hasUpdate: false, versionName: '', notes: '', downloadUrls: [], error: e.message || '检查更新失败' }
+  } finally {
+    checking.value = false
+  }
+}
+
+function openDownload(url) {
+  if (url) window.open(url, '_blank')
+}
 
 function goBack() { router.back() }
 
@@ -132,7 +196,31 @@ function onAuthorTap() {
 }
 .app-name { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 4px; }
 .app-version { font-size: 13px; color: #999; }
+.update-row { margin-top: 10px; }
+.update-btn {
+  border: 1px solid #0052B9; color: #0052B9; background: #fff;
+  font-size: 13px; padding: 6px 22px; border-radius: 16px; cursor: pointer;
+}
+.update-btn:disabled { opacity: 0.5; }
 .app-author { font-size: 12px; color: #aaa; margin-top: 4px; user-select: none; -webkit-user-select: none; cursor: pointer; }
+
+.modal-mask {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 2100;
+}
+.modal {
+  width: 78%; max-width: 340px; background: #fff; border-radius: 14px;
+  padding: 20px 18px 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+}
+.modal-title { font-size: 16px; font-weight: 600; color: #333; text-align: center; margin-bottom: 12px; }
+.modal-notes { font-size: 13px; color: #555; line-height: 1.7; margin: 0 0 8px; white-space: pre-wrap; max-height: 40vh; overflow-y: auto; }
+.modal-hint { font-size: 12px; color: #999; margin: 0; }
+.modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.modal-btn {
+  flex: 1; border: 1px solid #ddd; background: #fff; color: #666;
+  font-size: 14px; padding: 9px 0; border-radius: 8px; cursor: pointer;
+}
+.modal-btn.primary { border-color: #0052B9; background: #0052B9; color: #fff; }
 
 .text { font-size: 13px; color: #555; line-height: 1.8; margin: 0; }
 
